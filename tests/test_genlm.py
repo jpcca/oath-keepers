@@ -1,5 +1,5 @@
 import asyncio
-from genlm.control import PromptedLLM, BoolFSA, AWRS
+from genlm.control import PromptedLLM, BoolFSA, AWRS  # type: ignore
 
 
 def test_regex():
@@ -10,15 +10,13 @@ def test_regex():
     # Create a finite-state automaton potential using a regular expression.
     fsa = BoolFSA.from_regex(r" SMC is (🔥🔥|😍😍|🤌🤌) with LMs")
 
-    # Coerce the FSA so that it operates on the token type of the language model.
+    # Coerce the FSA so that it operates on the token type of the LLM.
     coerced_fsa = fsa.coerce(llm, f=b"".join)
 
     # Create a token sampler that combines the language model and FSA.
     token_sampler = AWRS(llm, coerced_fsa)
 
-    # Generate text using SMC.
-    # Generation is asynchronous; use `await` if calling in an async context (like in an async
-    # function or in a Jupyter notebook) and `asyncio.run(token_sampler.smc(...))` otherwise.
+    # Generate text using SMC. Generation is asynchronous
     sequences = asyncio.run(
         token_sampler.smc(
             n_particles=10,  # Number of candidate sequences to maintain
