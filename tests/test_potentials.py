@@ -81,7 +81,9 @@ async def sentiment_analysis():
         n_particles=5,
         max_tokens=25,
         ess_threshold=0.5,
-        critic=sentiment_analysis.coerce(token_sampler.target, f=b"".join),
+        critic=sentiment_analysis.coerce(
+            token_sampler.target, f=b"".join
+        ).to_autobatched(),
     )
 
     print(sequences.decoded_posterior)
@@ -89,3 +91,7 @@ async def sentiment_analysis():
 
 def test_sentiment_analysis():
     asyncio.run(sentiment_analysis())
+
+
+if __name__ == "__main__":
+    test_sentiment_analysis()
