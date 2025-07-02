@@ -1,6 +1,6 @@
 import asyncio
 
-from mcp_agent.core.fastagent import FastAgent
+from mcp_agent.core.fastagent import FastAgent  # type: ignore[import]
 
 # Create the application
 fast = FastAgent("fast-agent agent_one (mcp server)")
