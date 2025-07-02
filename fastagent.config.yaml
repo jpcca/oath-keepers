@@ -22,6 +22,9 @@ logger:
 # MCP Servers
 mcp:
     servers:
-        agent_one:
+        prompts:
+            command: prompt-server
+            args: ["history.json"]
+        verifier_agent:
             transport: http
             url: http://localhost:8001/mcp
