@@ -1,8 +1,14 @@
 import asyncio
-import json
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
-from mcp.types import PromptMessage
+from mcp.types import (
+    CallToolRequest,
+    CallToolRequestParams,
+    EmbeddedResource,
+    ImageContent,
+    TextContent,
+)
 from mcp_agent.agents.base_agent import AgentConfig, BaseAgent
 from mcp_agent.core.fastagent import FastAgent
 from mcp_agent.core.prompt import Prompt
@@ -10,24 +16,30 @@ from mcp_agent.human_input.types import HumanInputCallback
 from mcp_agent.llm.augmented_llm import (
     AugmentedLLM,
     AugmentedLLMProtocol,
-    MessageParamT,
     ModelT,
     RequestParams,
 )
 from mcp_agent.llm.provider_types import Provider
-from mcp_agent.llm.usage_tracking import create_turn_usage_from_messages
+from mcp_agent.llm.providers.multipart_converter_openai import OpenAIConverter, OpenAIMessage
+from mcp_agent.llm.usage_tracking import TurnUsage
 from mcp_agent.logging.logger import get_logger
 from mcp_agent.mcp.helpers.content_helpers import get_text
 from mcp_agent.mcp.prompt_message_multipart import PromptMessageMultipart
 from openai import NotGiven
+
+# from openai.types.beta.chat import
+from openai.types.chat import (
+    ChatCompletionMessage,
+    ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionToolParam,
+)
+from openai.types.completion_usage import CompletionUsage as OpenAIUsage
 from pydantic_core import from_json
+from rich.text import Text
 
 if TYPE_CHECKING:
     from mcp_agent.context import Context
-
-
-CALL_TOOL_INDICATOR = "***CALL_TOOL"
-FIXED_RESPONSE_INDICATOR = "***FIXED_RESPONSE"
 
 
 class vLLM(AugmentedLLM):
@@ -39,206 +51,232 @@ class vLLM(AugmentedLLM):
     parallel workflow where no fan-in aggregation is needed.
     """
 
-    def __init__(
-        self, provider=Provider.FAST_AGENT, name: str = "Passthrough", **kwargs: dict[str, Any]
-    ) -> None:
-        super().__init__(name=name, provider=provider, **kwargs)
-        self.logger = get_logger(__name__)
-        self._messages = [PromptMessage]
-        self._fixed_response: str | None = None
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, provider=Provider.GENERIC, **kwargs)
+        print("it's a-me!...Mario!")
+
+    async def initialize(self) -> None:
         # llm = LLM(model="facebook/opt-125m")
         # # Create a sampling params object.
         # sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
-        print("it's a-me!...Mario!")
-
-    async def generate_str(
-        self,
-        message: Union[str, MessageParamT, List[MessageParamT]],
-        request_params: Optional[RequestParams] = None,
-    ) -> str:
-        """Return the input message as a string."""
-        # Check if this is a special command to call a tool
-        if isinstance(message, str) and message.startswith("***CALL_TOOL "):
-            return await self._call_tool_and_return_result(message)
-
-        self.show_user_message(message, model="fastagent-passthrough", chat_turn=0)
-        await self.show_assistant_message(message, title="ASSISTANT/PASSTHROUGH")
-
-        # Handle PromptMessage by concatenating all parts
-        result = ""
-        if isinstance(message, PromptMessage):
-            parts_text = []
-            for part in message.content:
-                parts_text.append(str(part))
-            result = "\n".join(parts_text)
-        else:
-            result = str(message)
-
-        # Track usage for this passthrough "turn"
-        try:
-            input_content = str(message)
-            output_content = result
-            tool_calls = 1 if input_content.startswith("***CALL_TOOL") else 0
-
-            turn_usage = create_turn_usage_from_messages(
-                input_content=input_content,
-                output_content=output_content,
-                model="passthrough",
-                model_type="passthrough",
-                tool_calls=tool_calls,
-                delay_seconds=0.0,
-            )
-            self.usage_accumulator.add_turn(turn_usage)
-        except Exception as e:
-            self.logger.warning(f"Failed to track usage: {e}")
-
-        return result
-
-    async def initialize(self) -> None:
         pass
 
-    async def _call_tool_and_return_result(self, command: str) -> str:
+    async def _openai_completion(
+        self,
+        message: OpenAIMessage,
+        request_params: RequestParams | None = None,
+    ) -> List[TextContent | ImageContent | EmbeddedResource]:
         """
-        Call a tool based on the command and return its result as a string.
-
-        Args:
-            command: The command string, expected format: "***CALL_TOOL <server>-<tool_name> [arguments_json]"
-
-        Returns:
-            Tool result as a string
+        Process a query using an LLM and available tools.
+        The default implementation uses OpenAI's ChatCompletion as the LLM.
+        Override this method to use a different LLM.
         """
-        try:
-            tool_name, arguments = self._parse_tool_command(command)
-            result = await self.aggregator.call_tool(tool_name, arguments)
-            return self._format_tool_result(tool_name, result)
-        except Exception as e:
-            self.logger.error(f"Error calling tool: {str(e)}")
-            return f"Error calling tool: {str(e)}"
 
-    def _parse_tool_command(self, command: str) -> tuple[str, Optional[dict]]:
-        """
-        Parse a tool command string into tool name and arguments.
+        request_params = self.get_request_params(request_params=request_params)
+        responses: List[TextContent | ImageContent | EmbeddedResource] = []
 
-        Args:
-            command: The command string in format "***CALL_TOOL <tool_name> [arguments_json]"
+        # TODO -- move this in to agent context management / agent group handling
+        messages: List[ChatCompletionMessageParam] = []
+        system_prompt = self.instruction or request_params.systemPrompt
+        if system_prompt:
+            messages.append(ChatCompletionSystemMessageParam(role="system", content=system_prompt))
 
-        Returns:
-            Tuple of (tool_name, arguments_dict)
+        messages.extend(self.history.get(include_completion_history=request_params.use_history))
+        messages.append(message)
 
-        Raises:
-            ValueError: If command format is invalid
-        """
-        parts = command.split(" ", 2)
-        if len(parts) < 2:
-            raise ValueError("Invalid format. Expected '***CALL_TOOL <tool_name> [arguments_json]'")
+        response = await self.aggregator.list_tools()
+        available_tools: List[ChatCompletionToolParam] | None = [
+            ChatCompletionToolParam(
+                type="function",
+                function={
+                    "name": tool.name,
+                    "description": tool.description if tool.description else "",
+                    "parameters": self.adjust_schema(tool.inputSchema),
+                },
+            )
+            for tool in response.tools
+        ]
 
-        tool_name = parts[1].strip()
-        arguments = None
+        # we do NOT send "stop sequences" as this causes errors with mutlimodal processing
+        for i in range(request_params.max_iterations):
+            self._log_chat_progress(self.chat_turn(), model=self.default_request_params.model)
 
-        if len(parts) > 2:
-            try:
-                arguments = json.loads(parts[2])
-            except json.JSONDecodeError:
-                raise ValueError(f"Invalid JSON arguments: {parts[2]}")
+            # outputs = llm.generate(prompts, sampling_params)
+            # # Print the outputs.
+            # print("\nGenerated Outputs:\n" + "-" * 60)
+            # for output in outputs:
+            #     prompt = output.prompt
+            #     generated_text = output.outputs[0].text
+            #     print(f"Prompt:    {prompt!r}")
+            #     print(f"Output:    {generated_text!r}")
+            #     print("-" * 60)
+            response = SimpleNamespace()
+            response.choices = [SimpleNamespace()]
+            response.choices[0].message = ChatCompletionMessage(
+                content=f"Pretty great! {message['content']}",
+                role="assistant",
+                tool_calls=None,
+                function_call=None,
+                refusal=None,
+                annotations=None,
+                audio=None,
+            )
+            response.choices[0].finish_reason = "stop"
+            response.usage = OpenAIUsage(
+                completion_tokens=100,
+                prompt_tokens=50,
+                total_tokens=150,
+            )
 
-        self.logger.info(f"Calling tool {tool_name} with arguments {arguments}")
-        return tool_name, arguments
+            # Track usage if response is valid and has usage data
+            if (
+                hasattr(response, "usage")
+                and response.usage
+                and not isinstance(response, BaseException)
+            ):
+                try:
+                    model_name = "vLLM"
+                    turn_usage = TurnUsage.from_openai(response.usage, model_name)
+                    self.usage_accumulator.add_turn(turn_usage)
+                except Exception as e:
+                    self.logger.warning(f"Failed to track usage: {e}")
 
-    def _format_tool_result(self, tool_name: str, result) -> str:
-        """
-        Format tool execution result as a string.
+            self.logger.debug(
+                "OpenAI completion response:",
+                data=response,
+            )
 
-        Args:
-            tool_name: The name of the tool that was called
-            result: The result returned from the tool
+            choice = response.choices[0]
+            message = choice.message
+            # prep for image/audio gen models
+            if message.content:
+                responses.append(TextContent(type="text", text=message.content))
 
-        Returns:
-            Formatted result as a string
-        """
-        if result.isError:
-            error_text = []
-            for content_item in result.content:
-                if hasattr(content_item, "text"):
-                    error_text.append(content_item.text)
+            # ParsedChatCompletionMessage is compatible with ChatCompletionMessage
+            # since it inherits from it, so we can use it directly
+            messages.append(message)
+
+            message_text = message.content
+            if choice.finish_reason in ["tool_calls", "function_call"] and message.tool_calls:
+                if message_text:
+                    await self.show_assistant_message(
+                        message_text,
+                        message.tool_calls[
+                            0
+                        ].function.name,  # TODO support displaying multiple tool calls
+                    )
                 else:
-                    error_text.append(str(content_item))
-            error_message = "\n".join(error_text) if error_text else "Unknown error"
-            return f"Error calling tool '{tool_name}': {error_message}"
+                    await self.show_assistant_message(
+                        Text(
+                            "the assistant requested tool calls",
+                            style="dim green italic",
+                        ),
+                        message.tool_calls[0].function.name,
+                    )
 
-        result_text = []
-        for content_item in result.content:
-            if hasattr(content_item, "text"):
-                result_text.append(content_item.text)
-            else:
-                result_text.append(str(content_item))
+                tool_results = []
+                for tool_call in message.tool_calls:
+                    self.show_tool_call(
+                        available_tools,
+                        tool_call.function.name,
+                        tool_call.function.arguments,
+                    )
+                    tool_call_request = CallToolRequest(
+                        method="tools/call",
+                        params=CallToolRequestParams(
+                            name=tool_call.function.name,
+                            arguments={}
+                            if not tool_call.function.arguments
+                            or tool_call.function.arguments.strip() == ""
+                            else from_json(tool_call.function.arguments, allow_partial=True),
+                        ),
+                    )
+                    result = await self.call_tool(tool_call_request, tool_call.id)
+                    self.show_oai_tool_result(str(result))
 
-        return "\n".join(result_text)
+                    tool_results.append((tool_call.id, result))
+                    responses.extend(result.content)
+                messages.extend(OpenAIConverter.convert_function_results_to_openai(tool_results))
+
+                self.logger.debug(
+                    f"Iteration {i}: Tool call results: {str(tool_results) if tool_results else 'None'}"
+                )
+            elif choice.finish_reason == "length":
+                # We have reached the max tokens limit
+                self.logger.debug(f"Iteration {i}: Stopping because finish_reason is 'length'")
+                if request_params and request_params.maxTokens is not None:
+                    message_text = Text(
+                        f"the assistant has reached the maximum token limit ({request_params.maxTokens})",
+                        style="dim green italic",
+                    )
+                else:
+                    message_text = Text(
+                        "the assistant has reached the maximum token limit",
+                        style="dim green italic",
+                    )
+
+                await self.show_assistant_message(message_text)
+                break
+            elif choice.finish_reason == "content_filter":
+                # The response was filtered by the content filter
+                self.logger.debug(
+                    f"Iteration {i}: Stopping because finish_reason is 'content_filter'"
+                )
+                break
+            elif choice.finish_reason == "stop":
+                self.logger.debug(f"Iteration {i}: Stopping because finish_reason is 'stop'")
+                if message_text:
+                    await self.show_assistant_message(message_text, "")
+                break
+
+        if request_params.use_history:
+            # Get current prompt messages
+            prompt_messages = self.history.get(include_completion_history=False)
+
+            # Calculate new conversation messages (excluding prompts)
+            new_messages = messages[len(prompt_messages) :]
+
+            if system_prompt:
+                new_messages = new_messages[1:]
+
+            self.history.set(new_messages)
+
+        self._log_chat_finished(model=self.default_request_params.model)
+
+        return responses
 
     async def _apply_prompt_provider_specific(
         self,
         multipart_messages: List["PromptMessageMultipart"],
         request_params: RequestParams | None = None,
+        is_template: bool = False,
     ) -> PromptMessageMultipart:
         last_message = multipart_messages[-1]
 
-        if self.is_tool_call(last_message):
-            result = Prompt.assistant(await self.generate_str(last_message.first_text()))
-            await self.show_assistant_message(result.first_text())
+        # Add all previous messages to history (or all messages if last is from assistant)
+        # if the last message is a "user" inference is required
+        messages_to_add = (
+            multipart_messages[:-1] if last_message.role == "user" else multipart_messages
+        )
+        converted = []
+        for msg in messages_to_add:
+            converted.append(OpenAIConverter.convert_to_openai(msg))
 
-            # Track usage for this tool call "turn"
-            try:
-                input_content = "\n".join(message.all_text() for message in multipart_messages)
-                output_content = result.first_text()
+        # TODO -- this looks like a defect from previous apply_prompt implementation.
+        self.history.extend(converted, is_prompt=is_template)
 
-                turn_usage = create_turn_usage_from_messages(
-                    input_content=input_content,
-                    output_content=output_content,
-                    model="passthrough",
-                    model_type="passthrough",
-                    tool_calls=1,  # This is definitely a tool call
-                    delay_seconds=0.0,
-                )
-                self.usage_accumulator.add_turn(turn_usage)
+        if "assistant" == last_message.role:
+            return last_message
 
-            except Exception as e:
-                self.logger.warning(f"Failed to track usage: {e}")
-
-            return result
-
-        if last_message.first_text().startswith(FIXED_RESPONSE_INDICATOR):
-            self._fixed_response = (
-                last_message.first_text().split(FIXED_RESPONSE_INDICATOR, 1)[1].strip()
-            )
-
-        if self._fixed_response:
-            await self.show_assistant_message(self._fixed_response)
-            result = Prompt.assistant(self._fixed_response)
-        else:
-            # TODO -- improve when we support Audio/Multimodal gen models e.g. gemini . This should really just return the input as "assistant"...
-            concatenated: str = "\n".join(message.all_text() for message in multipart_messages)
-            await self.show_assistant_message(concatenated)
-            result = Prompt.assistant(concatenated)
-
-        # Track usage for this passthrough "turn"
-        try:
-            input_content = "\n".join(message.all_text() for message in multipart_messages)
-            output_content = result.first_text()
-            tool_calls = 1 if self.is_tool_call(last_message) else 0
-
-            turn_usage = create_turn_usage_from_messages(
-                input_content=input_content,
-                output_content=output_content,
-                model="passthrough",
-                model_type="passthrough",
-                tool_calls=tool_calls,
-                delay_seconds=0.0,
-            )
-            self.usage_accumulator.add_turn(turn_usage)
-
-        except Exception as e:
-            self.logger.warning(f"Failed to track usage: {e}")
-
-        return result
+        # For assistant messages: Return the last message (no completion needed)
+        message_param: OpenAIMessage = OpenAIConverter.convert_to_openai(last_message)
+        responses: List[
+            TextContent | ImageContent | EmbeddedResource
+        ] = await self._openai_completion(
+            message_param,
+            request_params,
+        )
+        return Prompt.assistant(*responses)
 
     async def _apply_prompt_provider_specific_structured(
         self,
@@ -274,9 +312,6 @@ class vLLM(AugmentedLLM):
             logger.warning(f"Failed to parse structured response: {str(e)}")
             return None, message
 
-    def is_tool_call(self, message: PromptMessageMultipart) -> bool:
-        return message.first_text().startswith(CALL_TOOL_INDICATOR)
-
 
 class vLLMAgent(BaseAgent):
     def __init__(
@@ -301,16 +336,6 @@ class vLLMAgent(BaseAgent):
         if not self.initialized:
             await super().initialize()
             self.initialized = True
-
-        # outputs = llm.generate(prompts, sampling_params)
-        # # Print the outputs.
-        # print("\nGenerated Outputs:\n" + "-" * 60)
-        # for output in outputs:
-        #     prompt = output.prompt
-        #     generated_text = output.outputs[0].text
-        #     print(f"Prompt:    {prompt!r}")
-        #     print(f"Output:    {generated_text!r}")
-        #     print("-" * 60)
 
     async def attach_llm(
         self,
