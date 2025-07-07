@@ -1,8 +1,6 @@
-# Model string takes format:
-#   <provider>.<model_string>.<reasoning_effort?> (e.g. anthropic.claude-3-5-sonnet-20241022 or openai.o3-mini.low)
-#
-# Can be overriden with a command line switch --model=<model>, or within the Agent decorator.
-# Check here for current details: https://fast-agent.ai/models/
+generic:
+    api_key: "ollama" # Default for Ollama, change as needed
+    base_url: "http://localhost:11434/v1" # Default for Ollama
 
 # set the default model for fast-agent below:
 default_model: generic.llama3.2:latest
