@@ -1,17 +1,25 @@
 import asyncio
 import json
-from typing import Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 
 from mcp.types import PromptMessage
-from mcp_agent.agents.base_agent import BaseAgent
+from mcp_agent.agents.base_agent import AgentConfig, BaseAgent
 from mcp_agent.core.fastagent import FastAgent
 from mcp_agent.core.prompt import Prompt
-from mcp_agent.llm.augmented_llm import AugmentedLLM, MessageParamT, RequestParams
+from mcp_agent.human_input.types import HumanInputCallback
+from mcp_agent.llm.augmented_llm import (
+    AugmentedLLM,
+    AugmentedLLMProtocol,
+    MessageParamT,
+    RequestParams,
+)
 from mcp_agent.llm.provider_types import Provider
 from mcp_agent.llm.usage_tracking import create_turn_usage_from_messages
 from mcp_agent.logging.logger import get_logger
 from mcp_agent.mcp.prompt_message_multipart import PromptMessageMultipart
-from vllm import SamplingParams
+
+if TYPE_CHECKING:
+    from mcp_agent.context import Context
 
 # DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434/v1"
 # DEFAULT_OLLAMA_MODEL = "llama3.2:latest"
@@ -53,8 +61,6 @@ prompts = [
     "The future of AI is",
 ]
 
-# Create a sampling params object.
-sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
 
 # Create the application
 fast = FastAgent("fast-agent example")
@@ -274,10 +280,29 @@ class vLLM(AugmentedLLM):
         return message.first_text().startswith(CALL_TOOL_INDICATOR)
 
 
-class LocalAgent(BaseAgent):
+class vLLMAgent(BaseAgent):
+    def __init__(
+        self,
+        config: AgentConfig,
+        functions: Optional[List[Callable]] = None,
+        connection_persistence: bool = True,
+        human_input_callback: Optional[HumanInputCallback] = None,
+        context: Optional["Context"] = None,
+        **kwargs: Dict[str, Any],
+    ) -> None:
+        super().__init__(
+            config,
+            functions,
+            connection_persistence,
+            human_input_callback,
+            context,
+            **kwargs,
+        )
+
     async def initialize(self):
-        await super().initialize()
-        await self.attach_llm(vLLM, request_params=None)
+        if not self.initialized:
+            await super().initialize()
+            self.initialized = True
 
         # outputs = llm.generate(prompts, sampling_params)
         # # Print the outputs.
@@ -289,9 +314,59 @@ class LocalAgent(BaseAgent):
         #     print(f"Output:    {generated_text!r}")
         #     print("-" * 60)
 
+    async def attach_llm(
+        self,
+        llm_factory: Union[Type[AugmentedLLMProtocol], Callable[..., AugmentedLLMProtocol]],
+        model: Optional[str] = None,
+        request_params: Optional[RequestParams] = None,
+        **additional_kwargs,
+    ) -> vLLM:
+        """
+        Create and attach an LLM instance to this agent.
+
+        Parameters have the following precedence (highest to lowest):
+        1. Explicitly passed parameters to this method
+        2. Agent's default_request_params
+        3. LLM's default values
+
+        Args:
+            llm_factory: A class or callable that constructs an AugmentedLLM
+            model: Optional model name override
+            request_params: Optional request parameters override
+            **additional_kwargs: Additional parameters passed to the LLM constructor
+
+        Returns:
+            The created LLM instance
+        """
+        # Start with agent's default params
+        effective_params = (
+            self._default_request_params.model_copy() if self._default_request_params else None
+        )
+
+        # Override with explicitly passed request_params
+        if request_params:
+            if effective_params:
+                # Update non-None values
+                for k, v in request_params.model_dump(exclude_unset=True).items():
+                    if v is not None:
+                        setattr(effective_params, k, v)
+            else:
+                effective_params = request_params
+
+        # Override model if explicitly specified
+        if model and effective_params:
+            effective_params.model = model
+
+        # Create the LLM instance
+        self._llm = vLLM(
+            agent=self, request_params=effective_params, context=self._context, **additional_kwargs
+        )
+
+        return self._llm
+
 
 # Define the agent
-@fast.custom(LocalAgent, instruction="You are a helpful AI Agent")
+@fast.custom(vLLMAgent)
 async def main():
     async with fast.run() as agent:
         await agent("Hi! How are you?")
