@@ -1,6 +1,6 @@
 import asyncio
 from types import SimpleNamespace
-from typing import Callable, List, Optional, Tuple, Type, Union, cast
+from typing import Callable, List, Tuple, Type, Union, cast
 
 from mcp.types import (
     CallToolRequest,
@@ -307,33 +307,12 @@ class vLLMAgent(BaseAgent):
     async def attach_llm(
         self,
         llm_factory: Union[Type[AugmentedLLMProtocol], Callable[..., AugmentedLLMProtocol]],
-        model: Optional[str] = None,
-        request_params: Optional[RequestParams] = None,
-        **additional_kwargs,
-    ) -> vLLM:
-        """
-        Patch the agent with a vLLM instance.
-        """
-        effective_params = (
-            self._default_request_params.model_copy() if self._default_request_params else None
+        **kwargs,
+    ) -> AugmentedLLMProtocol:
+        return await super().attach_llm(
+            llm_factory=vLLM,  # override factory with vLLM
+            **kwargs,
         )
-
-        if request_params:
-            if effective_params:
-                for k, v in request_params.model_dump(exclude_unset=True).items():
-                    if v is not None:
-                        setattr(effective_params, k, v)
-            else:
-                effective_params = request_params
-
-        if model and effective_params:
-            effective_params.model = model
-
-        self._llm = vLLM(
-            agent=self, request_params=effective_params, context=self._context, **additional_kwargs
-        )
-
-        return self._llm
 
 
 agents = FastAgent("fast-agent example")
