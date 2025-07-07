@@ -300,10 +300,7 @@ class vLLM(AugmentedLLM):
             return None, message
 
 
-class vLLMAgent(BaseAgent):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
+class LocalAgent(BaseAgent):
     async def attach_llm(
         self,
         llm_factory: Union[Type[AugmentedLLMProtocol], Callable[..., AugmentedLLMProtocol]],
@@ -318,7 +315,7 @@ class vLLMAgent(BaseAgent):
 agents = FastAgent("fast-agent example")
 
 
-@agents.custom(vLLMAgent, instruction="You are a helpful assistant.")
+@agents.custom(LocalAgent, instruction="You are a helpful assistant.")
 async def main():
     prompts = [
         "Hello, my name is",
