@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 from mcp.types import PromptMessage
 from mcp_agent.agents.base_agent import AgentConfig, BaseAgent
@@ -11,59 +11,23 @@ from mcp_agent.llm.augmented_llm import (
     AugmentedLLM,
     AugmentedLLMProtocol,
     MessageParamT,
+    ModelT,
     RequestParams,
 )
 from mcp_agent.llm.provider_types import Provider
 from mcp_agent.llm.usage_tracking import create_turn_usage_from_messages
 from mcp_agent.logging.logger import get_logger
+from mcp_agent.mcp.helpers.content_helpers import get_text
 from mcp_agent.mcp.prompt_message_multipart import PromptMessageMultipart
+from openai import NotGiven
+from pydantic_core import from_json
 
 if TYPE_CHECKING:
     from mcp_agent.context import Context
 
-# DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434/v1"
-# DEFAULT_OLLAMA_MODEL = "llama3.2:latest"
-# DEFAULT_OLLAMA_API_KEY = "ollama"
-
-# class GenericAugmentedLLM(OpenAIAugmentedLLM):
-#     def __init__(self, *args, **kwargs) -> None:
-#         super().__init__(
-#             *args, provider=Provider.GENERIC, **kwargs
-#         )  # Properly pass args and kwargs to parent
-
-#     def _initialize_default_params(self, kwargs: dict) -> RequestParams:
-#         """Initialize Generic  parameters"""
-#         chosen_model = kwargs.get("model", DEFAULT_OLLAMA_MODEL)
-
-#         return RequestParams(
-#             model=chosen_model,
-#             systemPrompt=self.instruction,
-#             parallel_tool_calls=True,
-#             max_iterations=10,
-#             use_history=True,
-#         )
-
-#     def _base_url(self) -> str:
-#         base_url = os.getenv("GENERIC_BASE_URL", DEFAULT_OLLAMA_BASE_URL)
-#         if self.context.config and self.context.config.generic:
-#             base_url = self.context.config.generic.base_url
-
-#         return base_url
-
 
 CALL_TOOL_INDICATOR = "***CALL_TOOL"
 FIXED_RESPONSE_INDICATOR = "***FIXED_RESPONSE"
-
-prompts = [
-    "Hello, my name is",
-    "The president of the United States is",
-    "The capital of France is",
-    "The future of AI is",
-]
-
-
-# Create the application
-fast = FastAgent("fast-agent example")
 
 
 class vLLM(AugmentedLLM):
@@ -276,6 +240,40 @@ class vLLM(AugmentedLLM):
 
         return result
 
+    async def _apply_prompt_provider_specific_structured(
+        self,
+        multipart_messages: List[PromptMessageMultipart],
+        model: Type[ModelT],
+        request_params: RequestParams | None = None,
+    ) -> Tuple[ModelT | None, PromptMessageMultipart]:
+        """Base class attempts to parse JSON - subclasses can use provider specific functionality"""
+
+        request_params = self.get_request_params(request_params)
+
+        if not request_params.response_format:
+            schema = self.model_to_response_format(model)
+            if schema is not NotGiven:
+                request_params.response_format = schema
+
+        result: PromptMessageMultipart = await self._apply_prompt_provider_specific(
+            multipart_messages, request_params
+        )
+        return self._structured_from_multipart(result, model)
+
+    def _structured_from_multipart(
+        self, message: PromptMessageMultipart, model: Type[ModelT]
+    ) -> Tuple[ModelT | None, PromptMessageMultipart]:
+        """Parse the content of a PromptMessage and return the structured model and message itself"""
+        try:
+            text = get_text(message.content[-1]) or ""
+            json_data = from_json(text, allow_partial=True)
+            validated_model = model.model_validate(json_data)
+            return cast("ModelT", validated_model), message
+        except ValueError as e:
+            logger = get_logger(__name__)
+            logger.warning(f"Failed to parse structured response: {str(e)}")
+            return None, message
+
     def is_tool_call(self, message: PromptMessageMultipart) -> bool:
         return message.first_text().startswith(CALL_TOOL_INDICATOR)
 
@@ -365,12 +363,21 @@ class vLLMAgent(BaseAgent):
         return self._llm
 
 
-# Define the agent
+fast = FastAgent("fast-agent example")
+
+
 @fast.custom(vLLMAgent)
 async def main():
+    prompts = [
+        "Hello, my name is",
+        "The president of the United States is",
+        "The capital of France is",
+        "The future of AI is",
+    ]
+
     async with fast.run() as agent:
         await agent("Hi! How are you?")
 
 
-if __name__ == "__main__":
+def test_vllm_agent():
     asyncio.run(main())
