@@ -18,7 +18,6 @@ from mcp_agent.llm.augmented_llm import (
     ModelT,
     RequestParams,
 )
-from mcp_agent.llm.provider_types import Provider
 from mcp_agent.llm.providers.multipart_converter_openai import OpenAIConverter, OpenAIMessage
 from mcp_agent.llm.usage_tracking import TurnUsage
 from mcp_agent.logging.logger import get_logger
@@ -36,22 +35,24 @@ from openai.types.chat import (
 from openai.types.completion_usage import CompletionUsage as OpenAIUsage
 from pydantic_core import from_json
 from rich.text import Text
+from vllm import SamplingParams
 
 
 class vLLM(AugmentedLLM):
     """
-    vLLM interface for the MCP Agent.
+    vLLM interface for the fast-agent library.
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, provider=Provider.GENERIC, **kwargs)
+        super().__init__(*args, provider="vllm", **kwargs)
         print("it's a-me!...Mario!")
 
-    async def initialize(self) -> None:
-        # llm = LLM(model="facebook/opt-125m")
-        # # Create a sampling params object.
-        # sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
-        pass
+    def _initialize_default_params(self, kwargs: dict) -> RequestParams:
+        """Initialize Anthropic-specific default parameters"""
+        request_params = super()._initialize_default_params(kwargs)
+        request_params.sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
+
+        return request_params
 
     async def _vllm_completion(
         self,
@@ -330,3 +331,7 @@ async def main():
 
 def test_vllm_agent():
     asyncio.run(main())
+
+
+if __name__ == "__main__":
+    test_vllm_agent()
