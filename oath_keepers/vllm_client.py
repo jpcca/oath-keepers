@@ -14,6 +14,7 @@ from mcp_agent.llm.augmented_llm import (
     ModelT,
     RequestParams,
 )
+from mcp_agent.llm.provider_types import Provider
 from mcp_agent.llm.providers.multipart_converter_openai import OpenAIConverter, OpenAIMessage
 from mcp_agent.llm.usage_tracking import TurnUsage
 from mcp_agent.logging.logger import get_logger
@@ -43,7 +44,7 @@ class vLLM(AugmentedLLM):
     base_url = "http://localhost:8000"
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, provider="vllm", **kwargs)
+        super().__init__(*args, provider=Provider.GENERIC, **kwargs)
 
     def _vllm_client(self) -> AsyncAPIClient:
         return AsyncAPIClient(
