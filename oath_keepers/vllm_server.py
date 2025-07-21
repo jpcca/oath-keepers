@@ -6,6 +6,9 @@ from typing import Any, Optional
 import vllm.envs as envs
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
+from openai.types.chat import ChatCompletion, ChatCompletionMessage
+from openai.types.chat.chat_completion import Choice
+from openai.types.completion_usage import CompletionUsage
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.entrypoints.launcher import serve_http
@@ -57,8 +60,34 @@ async def _generate(request_dict: dict, raw_request: Request) -> Response:
     # prompt = final_output.prompt
     # assert prompt is not None
     # text_outputs = [prompt + output.text for output in final_output.outputs]
-    ret = {"text": "sdsdfsdf"}
-    return JSONResponse(ret)
+    return JSONResponse(
+        ChatCompletion(
+            choices=[
+                Choice(
+                    message=ChatCompletionMessage(
+                        content=f"Pretty great! {prompt}",
+                        role="assistant",
+                        tool_calls=None,
+                        function_call=None,
+                        refusal=None,
+                        annotations=None,
+                        audio=None,
+                    ),
+                    finish_reason="stop",
+                    index=0,
+                )
+            ],
+            id=request_id,
+            model="vLLM",
+            object="chat.completion",
+            created=0,
+            usage=CompletionUsage(
+                completion_tokens=100,
+                prompt_tokens=50,
+                total_tokens=150,
+            ),
+        ).model_dump()
+    )
 
 
 def build_app(args: Namespace) -> FastAPI:

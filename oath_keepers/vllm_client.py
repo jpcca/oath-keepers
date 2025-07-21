@@ -1,4 +1,3 @@
-from types import SimpleNamespace
 from typing import List, Tuple, Type, cast
 
 from mcp.types import (
@@ -22,14 +21,12 @@ from mcp_agent.mcp.helpers.content_helpers import get_text
 from mcp_agent.mcp.prompt_message_multipart import PromptMessageMultipart
 from openai import NotGiven
 from openai._client import AsyncAPIClient
-from openai.types import Completion
 from openai.types.chat import (
-    ChatCompletionMessage,
+    ChatCompletion,
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionToolParam,
 )
-from openai.types.completion_usage import CompletionUsage as OpenAIUsage
 from pydantic_core import from_json
 from rich.text import Text
 
@@ -57,6 +54,7 @@ class vLLM(AugmentedLLM):
         """Initialize Anthropic-specific default parameters"""
         request_params = super()._initialize_default_params(kwargs)
         request_params.sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
+        request_params.model = "vLLM"
 
         return request_params
 
@@ -98,32 +96,13 @@ class vLLM(AugmentedLLM):
         for i in range(request_params.max_iterations):
             self._log_chat_progress(self.chat_turn(), model=self.default_request_params.model)
 
-            completion = await self._vllm_client().post(
+            response = await self._vllm_client().post(
                 f"{self.base_url}/generate",
-                cast_to=Completion,
+                cast_to=ChatCompletion,
                 body=CompletionRequest(
                     prompt=message["content"],
                     sampling_params=request_params.sampling_params,
                 ).model_dump(),
-            )
-
-            # await self._openai_client().chat.completions.create(**arguments)
-            response = SimpleNamespace()
-            response.choices = [SimpleNamespace()]
-            response.choices[0].message = ChatCompletionMessage(
-                content=f"Pretty great! {message['content']}",
-                role="assistant",
-                tool_calls=None,
-                function_call=None,
-                refusal=None,
-                annotations=None,
-                audio=None,
-            )
-            response.choices[0].finish_reason = "stop"
-            response.usage = OpenAIUsage(
-                completion_tokens=100,
-                prompt_tokens=50,
-                total_tokens=150,
             )
 
             # Track usage if response is valid and has usage data
@@ -133,9 +112,9 @@ class vLLM(AugmentedLLM):
                 and not isinstance(response, BaseException)
             ):
                 try:
-                    model_name = "vLLM"
+                    model_name = self.default_request_params.model
                     turn_usage = TurnUsage.from_openai(response.usage, model_name)
-                    self.usage_accumulator.add_turn(turn_usage)
+                    self._finalize_turn_usage(turn_usage)
                 except Exception as e:
                     self.logger.warning(f"Failed to track usage: {e}")
 
@@ -143,6 +122,14 @@ class vLLM(AugmentedLLM):
                 "OpenAI completion response:",
                 data=response,
             )
+
+            if isinstance(response, BaseException):
+                self.logger.error(f"Error: {response}")
+                break
+
+            if not response.choices or len(response.choices) == 0:
+                # No response from the model, we're done
+                break
 
             choice = response.choices[0]
             message = choice.message
