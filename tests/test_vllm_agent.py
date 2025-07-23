@@ -1,26 +1,8 @@
 import asyncio
-from typing import Callable, Type, Union
 
-from mcp_agent.agents.base_agent import BaseAgent
 from mcp_agent.core.fastagent import FastAgent
-from mcp_agent.llm.augmented_llm import (
-    AugmentedLLMProtocol,
-)
 
-from oath_keepers.vllm_client import vLLM
-
-
-class LocalAgent(BaseAgent):
-    async def attach_llm(
-        self,
-        llm_factory: Union[Type[AugmentedLLMProtocol], Callable[..., AugmentedLLMProtocol]],
-        **kwargs,
-    ) -> AugmentedLLMProtocol:
-        return await super().attach_llm(
-            llm_factory=vLLM,  # override factory with vLLM
-            **kwargs,
-        )
-
+from oath_keepers.vllm_client import LocalAgent
 
 agents = FastAgent("fast-agent example")
 

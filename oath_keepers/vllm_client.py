@@ -1,4 +1,4 @@
-from typing import List, Tuple, Type, cast
+from typing import Callable, List, Tuple, Type, Union, cast
 
 from mcp.types import (
     CallToolRequest,
@@ -7,9 +7,11 @@ from mcp.types import (
     ImageContent,
     TextContent,
 )
+from mcp_agent.agents.base_agent import BaseAgent
 from mcp_agent.core.prompt import Prompt
 from mcp_agent.llm.augmented_llm import (
     AugmentedLLM,
+    AugmentedLLMProtocol,
     ModelT,
     RequestParams,
 )
@@ -293,3 +295,15 @@ class vLLM(AugmentedLLM):
             logger = get_logger(__name__)
             logger.warning(f"Failed to parse structured response: {str(e)}")
             return None, message
+
+
+class LocalAgent(BaseAgent):
+    async def attach_llm(
+        self,
+        llm_factory: Union[Type[AugmentedLLMProtocol], Callable[..., AugmentedLLMProtocol]],
+        **kwargs,
+    ) -> AugmentedLLMProtocol:
+        return await super().attach_llm(
+            llm_factory=vLLM,  # override factory with vLLM
+            **kwargs,
+        )
