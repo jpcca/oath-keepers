@@ -53,7 +53,7 @@ class vLLM(AugmentedLLM):
     def _initialize_default_params(self, kwargs: dict) -> RequestParams:
         """Initialize Anthropic-specific default parameters"""
         request_params = super()._initialize_default_params(kwargs)
-        request_params.sampling_params = SamplingParams(temperature=0, max_tokens=128)
+        request_params.sampling_params = SamplingParams(max_tokens=128)
         request_params.model = "vLLM"
 
         return request_params
