@@ -30,7 +30,7 @@ from openai.types.chat import (
 from pydantic_core import from_json
 from rich.text import Text
 
-from oath_keepers.types import CompletionRequest, SamplingParams
+from oath_keepers.types import GenerateRequest, SamplingParams
 
 
 class vLLM(AugmentedLLM):
@@ -53,7 +53,7 @@ class vLLM(AugmentedLLM):
     def _initialize_default_params(self, kwargs: dict) -> RequestParams:
         """Initialize Anthropic-specific default parameters"""
         request_params = super()._initialize_default_params(kwargs)
-        request_params.sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
+        request_params.sampling_params = SamplingParams(temperature=0, max_tokens=128)
         request_params.model = "vLLM"
 
         return request_params
@@ -99,8 +99,8 @@ class vLLM(AugmentedLLM):
             response = await self._vllm_client().post(
                 f"{self.base_url}/generate",
                 cast_to=ChatCompletion,
-                body=CompletionRequest(
-                    prompt=message["content"],
+                body=GenerateRequest(
+                    prompts=message["content"],
                     sampling_params=request_params.sampling_params,
                 ).model_dump(),
             )

@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse, Response
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice
 from openai.types.completion_usage import CompletionUsage
+from vllm import SamplingParams
 from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.entrypoints.launcher import serve_http
@@ -17,8 +18,6 @@ from vllm.logger import init_logger
 from vllm.usage.usage_lib import UsageContext
 from vllm.utils import FlexibleArgumentParser, random_uuid, set_ulimit
 from vllm.version import __version__ as VLLM_VERSION
-
-from oath_keepers.types import SamplingParams
 
 logger = init_logger("vllm_server")
 
@@ -41,31 +40,24 @@ async def generate(request: Request) -> Response:
 
 @with_cancellation
 async def _generate(request_dict: dict, raw_request: Request) -> Response:
-    prompt = request_dict.pop("prompt")
-    sampling_params = SamplingParams(**request_dict)
+    prompts = request_dict.pop("prompts")
+    sampling_params = SamplingParams(**request_dict.pop("sampling_params"))
     request_id = random_uuid()
 
     assert engine is not None
-    # results_generator = engine.generate(prompt, sampling_params, request_id)
+    results_generator = engine.generate(prompts, sampling_params, request_id)
 
     # Non-streaming case
     final_output = None
-    # try:
-    #     async for request_output in results_generator:
-    #         final_output = request_output
-    # except asyncio.CancelledError:
-    #     return Response(status_code=499)
+    async for request_output in results_generator:
+        final_output = request_output
 
-    # assert final_output is not None
-    # prompt = final_output.prompt
-    # assert prompt is not None
-    # text_outputs = [prompt + output.text for output in final_output.outputs]
     return JSONResponse(
         ChatCompletion(
             choices=[
                 Choice(
                     message=ChatCompletionMessage(
-                        content=f"Pretty great! {prompt}",
+                        content=output.text,
                         role="assistant",
                         tool_calls=None,
                         function_call=None,
@@ -74,8 +66,9 @@ async def _generate(request_dict: dict, raw_request: Request) -> Response:
                         audio=None,
                     ),
                     finish_reason="stop",
-                    index=0,
+                    index=i,
                 )
+                for i, output in enumerate(final_output.outputs)
             ],
             id=request_id,
             model="vLLM",

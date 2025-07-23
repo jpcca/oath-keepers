@@ -1,9 +1,11 @@
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any, Optional, Sequence, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SamplingParams(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     n: int = 1
     best_of: Optional[int] = None
     presence_penalty: float = 0.0
@@ -35,9 +37,8 @@ class SamplingParams(BaseModel):
     bad_words: Optional[list[str]] = None
 
 
-class CompletionRequest(BaseModel):
-    prompt: str
-    sampling_params: SamplingParams
+class GenerateRequest(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    # class Config:
-    #     arbitrary_types_allowed = True
+    prompts: str | Sequence[str]
+    sampling_params: SamplingParams | Sequence[SamplingParams]
