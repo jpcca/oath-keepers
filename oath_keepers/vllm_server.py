@@ -9,7 +9,7 @@ from vllm import LLM
 from vllm.logger import init_logger
 from vllm.utils import random_uuid
 
-from oath_keepers.types import GenerateRequest
+from oath_keepers.utils.typing import GenerateRequest
 
 logger = init_logger("vllm_server")
 app = FastAPI()

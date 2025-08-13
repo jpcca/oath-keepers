@@ -21,6 +21,7 @@ jobs:
               uses: astral-sh/setup-uv@v6
               with:
                   activate-environment: true
+                  enable-cache: true
 
             - name: Install dependencies
               run: uv pip install .[dev]
@@ -45,6 +46,7 @@ jobs:
               uses: astral-sh/setup-uv@v6
               with:
                   activate-environment: true
+                  enable-cache: true
 
             - name: Install dependencies
               run: uv pip install .[dev]

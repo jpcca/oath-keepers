@@ -32,7 +32,7 @@ from openai.types.chat import (
 from pydantic_core import from_json
 from rich.text import Text
 
-from oath_keepers.types import GenerateRequest, SamplingParams
+from oath_keepers.utils.typing import GenerateRequest, SamplingParams
 
 
 class vLLM(AugmentedLLM):
