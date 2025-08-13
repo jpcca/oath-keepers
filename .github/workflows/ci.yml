@@ -11,51 +11,64 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-
-            - name: "Set up Python"
               uses: actions/setup-python@v5
               with:
                   python-version-file: ".python-version"
 
-            - name: Setup uv
-              id: setup-uv
-              uses: astral-sh/setup-uv@v6
-              with:
-                  activate-environment: true
-                  enable-cache: true
-
-            - name: Install dependencies
-              if: steps.setup-uv.outputs.cache-hit != 'true'
-              run: uv pip install .[cpu,dev]
-
-            - name: Run ruff linter
-              run: uv run ruff check .
-
-            - name: Run ruff formatter check
-              run: uv run ruff format --check .
+            - uses: astral-sh/ruff-action@v3
+              run: |
+                  ruff check .
+                  ruff format --check .
 
     test:
         runs-on: ubuntu-latest
+        env:
+            UV_CACHE_DIR: /tmp/.uv-cache
         steps:
             - uses: actions/checkout@v4
+
+            - name: Environment cache
+              id: env-cache
+              uses: actions/cache/restore@v4
+              with:
+                path: |
+                  ${{ runner.tool_cache }}/Python/3.12.11
+                  /tmp/.uv-cache
+                  ./.check.md5
+                key: env-cache:main
+                restore-keys: |
+                  env-cache:backup
+
+            - name: Free up space on runners
+              if: steps.env-cache.outputs.cache-hit != 'true'
+              run: |
+                sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/go /usr/local/lib/gradle /usr/local/lib/node /usr/local/lib/wine /usr/local/lib/xamarin /usr/local/lib/mono
+                sudo apt-get update
+                sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' \
+                  azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+                sudo apt-get -y autoremove
+                sudo apt-get clean
 
             - name: "Set up Python"
               uses: actions/setup-python@v5
               with:
-                  python-version-file: ".python-version"
+                  python-version-file: "3.12.11"
 
             - name: Setup uv
               id: setup-uv
               uses: astral-sh/setup-uv@v6
               with:
                   activate-environment: true
-                  enable-cache: true
 
-            - name: Install dependencies
-              if: steps.setup-uv.outputs.cache-hit != 'true'
+            - name: Install dependencies if needed
               run: |
+                if ! md5sum --status --check .check.md5; then
                   uv run bash vllm-cpu.sh
                   uv pip install .[cpu,dev]
+                  md5sum uv.lock pyproject.toml .python-version uv.lock vllm-cpu.sh > .check.md5
+                else
+                  echo "Requirements unchanged"
+                fi
 
             - name: Run tests
               run: |
@@ -73,3 +86,37 @@ jobs:
                   done
 
                   uv run pytest
+
+            - name: Upload SHA-specific cache as backup
+              if: github.ref == 'refs/heads/main'
+              uses: actions/cache/save@v4
+              with:
+                path: |
+                  ${{ runner.tool_cache }}/Python/3.12.11
+                  /tmp/.uv-cache
+                  ./.check.md5
+                key: env-cache:backup:${{ github.sha }}
+
+            - name: Delete main cache
+              continue-on-error: true
+              if: github.ref == 'refs/heads/main'
+              run: gh cache delete env-cache:main
+              env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Upload main cache
+              if: github.ref == 'refs/heads/main'
+              uses: actions/cache/save@v4
+              with:
+                path: |
+                  ${{ runner.tool_cache }}/Python/3.12.11
+                  /tmp/.uv-cache
+                  ./.check.md5
+                key: env-cache:main
+
+            - name: Delete backup cache
+              continue-on-error: true
+              if: github.ref == 'refs/heads/main'
+              run: gh cache delete env-cache:backup:${GITHUB_SHA}
+              env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
