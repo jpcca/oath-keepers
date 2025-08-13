@@ -43,6 +43,7 @@ jobs:
                   path: |
                       ${{ runner.tool_cache }}/Python/3.12.11
                       /tmp/.uv-cache
+                      ./.venv
                       ./.check.md5
                   key: env-cache:main
                   restore-keys: |
@@ -81,6 +82,7 @@ jobs:
 
             - name: Run tests
               run: |
+                  hf auth login --token ${{ secrets.HUGGINGFACE }}
                   uv run oath_keepers/vllm_server.py --model google/gemma-2b-it &
 
                   counter=0
@@ -102,6 +104,7 @@ jobs:
                   path: |
                       ${{ runner.tool_cache }}/Python/3.12.11
                       /tmp/.uv-cache
+                      ./.venv
                       ./.check.md5
                   key: env-cache:backup:${{ github.sha }}
 
@@ -119,6 +122,7 @@ jobs:
                   path: |
                       ${{ runner.tool_cache }}/Python/3.12.11
                       /tmp/.uv-cache
+                      ./.venv
                       ./.check.md5
                   key: env-cache:main
 
