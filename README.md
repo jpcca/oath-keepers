@@ -9,7 +9,14 @@ This project aims to improve patient outcomes by using multi-agent systems to el
 This project uses the uv package manager (https://github.com/astral-sh/uv)
 
 ```bash
-uv pip install -e .
+uv pip install -e .[gpu,dev]
+```
+
+For cpu-only builds
+
+```bash
+uv run bash vllm-cpu.sh
+uv pip install -e .[cpu,dev]
 ```
 
 ### Funding Sources

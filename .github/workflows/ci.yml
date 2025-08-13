@@ -24,7 +24,7 @@ jobs:
                   enable-cache: true
 
             - name: Install dependencies
-              run: uv pip install .[dev]
+              run: uv pip install .[cpu,dev]
 
             - name: Run ruff linter
               run: uv run ruff check .
@@ -48,21 +48,11 @@ jobs:
                   activate-environment: true
                   enable-cache: true
 
-            - name: Install build dependencies
-              run: |
-                  sudo apt-get install -y --no-install-recommends libnuma-dev
-
             - name: Build vLLM for CPU
-              run: |
-                  git clone https://github.com/vllm-project/vllm.git vllm_source
-                  cd vllm_source
-                  uv pip install -r requirements/cpu-build.txt --torch-backend auto --index-strategy unsafe-best-match
-                  uv pip install -r requirements/cpu.txt --torch-backend auto --index-strategy unsafe-best-match
-                  VLLM_TARGET_DEVICE=cpu python setup.py install
-                  cd ..
+              run: uv run bash vllm-cpu.sh
 
             - name: Install dependencies
-              run: uv pip install .[dev]
+              run: uv pip install .[cpu,dev]
 
             - name: Run tests
               run: |
