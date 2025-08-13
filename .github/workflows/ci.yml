@@ -56,7 +56,7 @@ jobs:
 
             - name: Run tests
               run: |
-                  huggingface-cli login --token ${{ secrets.HUGGINGFACE }}
+                  hf auth login --token ${{ secrets.HUGGINGFACE }} --add-to-git-credential
                   uv run oath_keepers/vllm_server.py --model google/gemma-2b-it &
 
                   counter=0
