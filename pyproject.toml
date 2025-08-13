@@ -1,7 +1,6 @@
 [project]
 dependencies = [
   "fast-agent-mcp>=0.2.35",
-  "vllm>=0.10.0",
 ]
 description = "Add your description here"
 name = "oath-keepers"
@@ -10,10 +9,14 @@ requires-python = ">=3.12"
 version = "0.1.0"
 
 [project.optional-dependencies]
+cpu = [] # installed using vllm-cpu.sh
 dev = [
   "debugpy>=1.8.15",
   "pytest>=8.4.1",
   "ruff>=0.12.2",
+]
+gpu = [
+  "vllm>=0.10.0",
 ]
 
 [tool.ruff]
