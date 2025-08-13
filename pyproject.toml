@@ -19,11 +19,6 @@ gpu = [
   "vllm>=0.10.0",
 ]
 
-[tool.setuptools.packages.find]
-exclude = ["vllm_source*"]
-include = ["oath_keepers*"]
-where = ["."]
-
 [tool.ruff]
 line-length = 100
 target-version = "py311"

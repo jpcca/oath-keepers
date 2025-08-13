@@ -49,6 +49,7 @@ jobs:
                   enable-cache: true
 
             - name: Build vLLM for CPU
+              if: steps.setup-uv.outputs.cache-hit != 'true'
               run: uv run bash vllm-cpu.sh
 
             - name: Install dependencies
