@@ -19,6 +19,20 @@ uv run bash vllm-cpu.sh
 uv pip install -e .[cpu,dev]
 ```
 
+### Advanced caching
+
+Changes in the following files rebuilds the cache used for running unit tests in GitHub actions.
+
+```
+uv.lock
+pyproject.toml
+.python-version
+uv.lock
+vllm-cpu.sh
+```
+
+Check `.github/workflows/ci.yml` to see implementation details.
+
 ### Funding Sources
 
 This work was supported by the Cross-ministerial Strategic Innovation Promotion Program (SIP) on “Integrated Health Care System” Grant Number JPJ012425.
