@@ -56,11 +56,10 @@ jobs:
 
             - name: Build and install vLLM from source
               run: |
-                  git clone https://github.com/vllm-project/vllm.git /tmp/vllm
-                  cd /tmp/vllm
-                  pip install --upgrade pip
-                  pip install -v -r requirements/cpu-build.txt --extra-index-url https://download.pytorch.org/whl/cpu
-                  pip install -v -r requirements/cpu.txt --extra-index-url https://download.pytorch.org/whl/cpu
+                  git clone https://github.com/vllm-project/vllm.git vllm_source
+                  cd vllm_source
+                  uv pip install -r requirements/cpu-build.txt --torch-backend auto
+                  uv pip install -r requirements/cpu.txt --torch-backend auto
                   VLLM_TARGET_DEVICE=cpu python setup.py install
 
             - name: Install dependencies
