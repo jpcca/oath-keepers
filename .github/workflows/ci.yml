@@ -11,7 +11,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-              uses: actions/setup-python@v5
+            - uses: actions/setup-python@v5
               with:
                   python-version-file: ".python-version"
 
@@ -31,23 +31,23 @@ jobs:
               id: env-cache
               uses: actions/cache/restore@v4
               with:
-                path: |
-                  ${{ runner.tool_cache }}/Python/3.12.11
-                  /tmp/.uv-cache
-                  ./.check.md5
-                key: env-cache:main
-                restore-keys: |
-                  env-cache:backup
+                  path: |
+                      ${{ runner.tool_cache }}/Python/3.12.11
+                      /tmp/.uv-cache
+                      ./.check.md5
+                  key: env-cache:main
+                  restore-keys: |
+                      env-cache:backup
 
             - name: Free up space on runners
               if: steps.env-cache.outputs.cache-hit != 'true'
               run: |
-                sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/go /usr/local/lib/gradle /usr/local/lib/node /usr/local/lib/wine /usr/local/lib/xamarin /usr/local/lib/mono
-                sudo apt-get update
-                sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' \
-                  azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
-                sudo apt-get -y autoremove
-                sudo apt-get clean
+                  sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/go /usr/local/lib/gradle /usr/local/lib/node /usr/local/lib/wine /usr/local/lib/xamarin /usr/local/lib/mono
+                  sudo apt-get update
+                  sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' \
+                    azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+                  sudo apt-get -y autoremove
+                  sudo apt-get clean
 
             - name: "Set up Python"
               uses: actions/setup-python@v5
@@ -62,13 +62,13 @@ jobs:
 
             - name: Install dependencies if needed
               run: |
-                if ! md5sum --status --check .check.md5; then
-                  uv run bash vllm-cpu.sh
-                  uv pip install .[cpu,dev]
-                  md5sum uv.lock pyproject.toml .python-version uv.lock vllm-cpu.sh > .check.md5
-                else
-                  echo "Requirements unchanged"
-                fi
+                  if ! md5sum --status --check .check.md5; then
+                    uv run bash vllm-cpu.sh
+                    uv pip install .[cpu,dev]
+                    md5sum uv.lock pyproject.toml .python-version uv.lock vllm-cpu.sh > .check.md5
+                  else
+                    echo "Requirements unchanged"
+                  fi
 
             - name: Run tests
               run: |
@@ -91,32 +91,32 @@ jobs:
               if: github.ref == 'refs/heads/main'
               uses: actions/cache/save@v4
               with:
-                path: |
-                  ${{ runner.tool_cache }}/Python/3.12.11
-                  /tmp/.uv-cache
-                  ./.check.md5
-                key: env-cache:backup:${{ github.sha }}
+                  path: |
+                      ${{ runner.tool_cache }}/Python/3.12.11
+                      /tmp/.uv-cache
+                      ./.check.md5
+                  key: env-cache:backup:${{ github.sha }}
 
             - name: Delete main cache
               continue-on-error: true
               if: github.ref == 'refs/heads/main'
               run: gh cache delete env-cache:main
               env:
-                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Upload main cache
               if: github.ref == 'refs/heads/main'
               uses: actions/cache/save@v4
               with:
-                path: |
-                  ${{ runner.tool_cache }}/Python/3.12.11
-                  /tmp/.uv-cache
-                  ./.check.md5
-                key: env-cache:main
+                  path: |
+                      ${{ runner.tool_cache }}/Python/3.12.11
+                      /tmp/.uv-cache
+                      ./.check.md5
+                  key: env-cache:main
 
             - name: Delete backup cache
               continue-on-error: true
               if: github.ref == 'refs/heads/main'
               run: gh cache delete env-cache:backup:${GITHUB_SHA}
               env:
-                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
