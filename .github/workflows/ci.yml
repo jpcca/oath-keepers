@@ -16,7 +16,7 @@ jobs:
                   python-version-file: ".python-version"
 
             - uses: astral-sh/ruff-action@v3
-              run: |
+            - run: |
                   ruff check .
                   ruff format --check .
 
