@@ -1,7 +1,6 @@
 ### Oath keeping Agents
 
 [![Build Status](https://github.com/jpcca/oath-keepers/workflows/CI/badge.svg)](https://github.com/jpcca/oath-keepers/actions?query=workflow%3ACI)
-[![Coverage](https://codecov.io/gh/jpcca/oath-keepers/branch/main/graph/badge.svg)](https://codecov.io/gh/jpcca/oath-keepers)
 
 This project aims to improve patient outcomes by using multi-agent systems to ellicit detailed information from patients about their symptoms as they happening. Using probabilistic computing we estimate the probability of deviant behaviours such as breaking the Hippocratic oath or diagnosing the patient.
 
