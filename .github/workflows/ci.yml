@@ -61,7 +61,7 @@ jobs:
 
                   counter=0
                   while ! nc -z localhost 8000; do
-                    if [ $counter -ge 120 ]; then
+                    if [ $counter -ge 240 ]; then
                       echo "Timeout waiting for vLLM server to start on localhost:8000"
                       exit 1
                     fi
