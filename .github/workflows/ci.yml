@@ -48,11 +48,6 @@ jobs:
                   activate-environment: true
                   enable-cache: true
 
-            - name: Setup cmake
-              uses: jwlawson/actions-setup-cmake@v2
-              with:
-                  cmake-version: "3.26.1"
-
             # - name: Install build dependencies
             #   run: |
             #       sudo apt-get update -y
@@ -63,8 +58,8 @@ jobs:
               run: |
                   git clone https://github.com/vllm-project/vllm.git vllm_source
                   cd vllm_source
-                  uv pip install -r requirements/cpu-build.txt --torch-backend auto
-                  uv pip install -r requirements/cpu.txt --torch-backend auto
+                  uv pip install -r requirements/cpu-build.txt --torch-backend auto --index-strategy unsafe-best-match
+                  uv pip install -r requirements/cpu.txt --torch-backend auto --index-strategy unsafe-best-match
                   VLLM_TARGET_DEVICE=cpu python setup.py install
 
             - name: Install dependencies
