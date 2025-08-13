@@ -24,6 +24,7 @@ jobs:
                   enable-cache: true
 
             - name: Install dependencies
+              if: steps.setup-uv.outputs.cache-hit != 'true'
               run: uv pip install .[cpu,dev]
 
             - name: Run ruff linter
@@ -48,12 +49,11 @@ jobs:
                   activate-environment: true
                   enable-cache: true
 
-            - name: Build vLLM for CPU
-              if: steps.setup-uv.outputs.cache-hit != 'true'
-              run: uv run bash vllm-cpu.sh
-
             - name: Install dependencies
-              run: uv pip install .[cpu,dev]
+              if: steps.setup-uv.outputs.cache-hit != 'true'
+              run: |
+                  uv run bash vllm-cpu.sh
+                  uv pip install .[cpu,dev]
 
             - name: Run tests
               run: |
