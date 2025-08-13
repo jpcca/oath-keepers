@@ -56,12 +56,12 @@ jobs:
 
             - name: Run tests
               run: |
-                  hf auth login --token ${{ secrets.HUGGINGFACE }} --add-to-git-credential
+                  hf auth login --token ${{ secrets.HUGGINGFACE }}
                   uv run oath_keepers/vllm_server.py --model google/gemma-2b-it &
 
                   counter=0
                   while ! nc -z localhost 8000; do
-                    if [ $counter -ge 60 ]; then
+                    if [ $counter -ge 120 ]; then
                       echo "Timeout waiting for vLLM server to start on localhost:8000"
                       exit 1
                     fi
