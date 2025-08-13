@@ -12,3 +12,4 @@ wheels/
 # hidden files
 .*
 !.gitignore
+!.github

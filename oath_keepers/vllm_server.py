@@ -1,3 +1,5 @@
+import argparse
+
 import uvicorn
 from fastapi import FastAPI
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
@@ -10,8 +12,6 @@ from vllm.utils import random_uuid
 from oath_keepers.types import GenerateRequest
 
 logger = init_logger("vllm_server")
-
-llm = LLM(model="google/gemma-3-1b-it")
 app = FastAPI()
 
 
@@ -66,4 +66,10 @@ async def generate(request: GenerateRequest) -> ChatCompletion:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--model", type=str, default="google/gemma-3-1b-it")
+    args = parser.parse_args()
+
+    llm = LLM(model=args.model)
     uvicorn.run(app, host="0.0.0.0", port=8000)

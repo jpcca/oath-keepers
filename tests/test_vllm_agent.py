@@ -9,13 +9,6 @@ agents = FastAgent("fast-agent example")
 
 @agents.custom(LocalAgent, instruction="You are a helpful assistant.")
 async def main():
-    prompts = [
-        "Hello, my name is",
-        "The president of the United States is",
-        "The capital of France is",
-        "The future of AI is",
-    ]
-
     async with agents.run() as agent:
         await agent("Hi! How are you?")
 
