@@ -44,6 +44,7 @@ jobs:
                       ${{ runner.tool_cache }}/Python/3.12.11
                       /tmp/.uv-cache
                       ./.venv
+                      ~/.cache/huggingface
                       ./.check.md5
                   key: env-cache:main
                   restore-keys: |
@@ -105,6 +106,7 @@ jobs:
                       ${{ runner.tool_cache }}/Python/3.12.11
                       /tmp/.uv-cache
                       ./.venv
+                      ~/.cache/huggingface
                       ./.check.md5
                   key: env-cache:backup:${{ github.sha }}
 
@@ -123,6 +125,7 @@ jobs:
                       ${{ runner.tool_cache }}/Python/3.12.11
                       /tmp/.uv-cache
                       ./.venv
+                      ~/.cache/huggingface
                       ./.check.md5
                   key: env-cache:main
 
