@@ -81,7 +81,6 @@ jobs:
 
             - name: Run tests
               run: |
-                  hf auth login --token ${{ secrets.HUGGINGFACE }}
                   uv run oath_keepers/vllm_server.py --model google/gemma-2b-it &
 
                   counter=0
