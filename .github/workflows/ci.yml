@@ -56,7 +56,6 @@ jobs:
 
             - name: Run tests
               run: |
-                  export LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4:$LD_PRELOAD"
                   python oath_keepers/vllm_server.py --model tiny-random/gemma-3 &
                   while ! nc -z localhost 8000; do sleep 1; done
                   uv run pytest
