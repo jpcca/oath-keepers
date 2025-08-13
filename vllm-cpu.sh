@@ -10,5 +10,5 @@ cd vllm_source
 uv pip install -r requirements/cpu-build.txt --torch-backend auto --index-strategy unsafe-best-match
 uv pip install -r requirements/cpu.txt --torch-backend auto --index-strategy unsafe-best-match
 
-VLLM_TARGET_DEVICE=cpu python setup.py install
+VLLM_TARGET_DEVICE=cpu uv pip install
 cd ..
