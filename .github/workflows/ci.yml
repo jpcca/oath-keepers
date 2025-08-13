@@ -57,5 +57,15 @@ jobs:
             - name: Run tests
               run: |
                   uv run oath_keepers/vllm_server.py --model google/gemma-2b-it &
-                  while ! nc -z localhost 8000; do sleep 1; done
+
+                  counter=0
+                  while ! nc -z localhost 8000; do
+                    if [ $counter -ge 60 ]; then
+                      echo "Timeout waiting for vLLM server to start on localhost:8000"
+                      exit 1
+                    fi
+                    sleep 1
+                    counter=$((counter+1))
+                  done
+
                   uv run pytest
