@@ -48,6 +48,11 @@ jobs:
                   activate-environment: true
                   enable-cache: true
 
+            - name: Update runner packages
+              run: |
+                  sudo apt update
+                  sudo apt install -y cmake
+
             # - name: Install build dependencies
             #   run: |
             #       sudo apt-get update -y
