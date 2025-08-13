@@ -12,7 +12,7 @@ This project uses the uv package manager (https://github.com/astral-sh/uv)
 uv pip install -e .[gpu,dev]
 ```
 
-For cpu-only builds, which are used for GitHub actions
+For cpu-only builds
 
 ```bash
 uv run bash vllm-cpu.sh
