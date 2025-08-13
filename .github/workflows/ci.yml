@@ -48,10 +48,10 @@ jobs:
                   activate-environment: true
                   enable-cache: true
 
-            - name: Update runner packages
-              run: |
-                  sudo apt update
-                  sudo apt install -y cmake
+            - name: Setup cmake
+              uses: jwlawson/actions-setup-cmake@v2
+              with:
+                  cmake-version: "3.26.1"
 
             # - name: Install build dependencies
             #   run: |
