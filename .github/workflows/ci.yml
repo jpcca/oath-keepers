@@ -31,6 +31,10 @@ jobs:
 
     test:
         runs-on: ubuntu-latest
+        permissions:
+            actions: write
+            id-token: write
+            contents: read
         env:
             UV_CACHE_DIR: /tmp/.uv-cache
         steps:
