@@ -56,6 +56,6 @@ jobs:
 
             - name: Run tests
               run: |
-                  python oath_keepers/vllm_server.py --model tiny-random/gemma-3 &
+                  uv run oath_keepers/vllm_server.py --model google/gemma-2b-it &
                   while ! nc -z localhost 8000; do sleep 1; done
                   uv run pytest
