@@ -13,5 +13,4 @@ uv pip install -r requirements/cpu.txt --torch-backend auto --index-strategy uns
 VLLM_TARGET_DEVICE=cpu python setup.py install
 cd ..
 
-# clean up
 sudo rm -rf vllm_source
