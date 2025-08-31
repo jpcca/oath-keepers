@@ -1,4 +1,6 @@
 import asyncio
+
+from mcp_agent.core.request_params import RequestParams
 from mcp_agent.core.fastagent import FastAgent
 from oath_keepers.vllm_client import LocalAgent
 from datetime import datetime
@@ -56,7 +58,13 @@ def save_conversation_with_timestamp(conversation_history):
             f.write(message + "\n")
 
 
-@agents.custom(LocalAgent, instruction=PROMPT)
+@agents.custom(
+    LocalAgent,
+    instruction=PROMPT,
+    request_params=RequestParams(
+        use_history=True,
+    ),
+)
 async def medical_assistant():
     async with agents.run() as agent:
         print("=== Medical Symptom Clarification Assistant ===")
@@ -78,7 +86,7 @@ async def medical_assistant():
             conversation_history.append(f"Patient: {patient_input}")
 
             # Create context-aware prompt
-            context = "\n".join(conversation_history[-6:])  # Keep last 6 exchanges
+            context = "\n".join(conversation_history[-8:])  # Keep last 6 exchanges
             full_prompt = f"""Conversation so far:\n{context}\n
 You MUST respond in exactly this format:
 Response: [Your actual response to the patient]
