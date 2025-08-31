@@ -5,8 +5,8 @@ from mcp.types import (
     CallToolRequestParams,
     EmbeddedResource,
     ImageContent,
-    TextContent,
     PromptMessage,
+    TextContent,
 )
 from mcp_agent import AgentConfig
 from mcp_agent.agents.base_agent import BaseAgent
@@ -34,7 +34,7 @@ from openai.types.chat import (
 from pydantic_core import from_json
 from rich.text import Text
 
-from oath_keepers.utils.typing import GenerateRequest, SamplingParams, GuidedDecodingParams
+from oath_keepers.utils.typing import GenerateRequest, GuidedDecodingParams, SamplingParams
 
 
 class vLLM(AugmentedLLM):

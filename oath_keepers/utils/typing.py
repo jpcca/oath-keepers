@@ -1,5 +1,5 @@
-from typing import Annotated, Any, Optional, Sequence, Union
 from dataclasses import dataclass
+from typing import Annotated, Any, Optional, Sequence, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
