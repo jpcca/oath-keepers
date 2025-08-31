@@ -23,6 +23,10 @@ async def generate(request: GenerateRequest) -> ChatCompletion:
     for key, value in request.sampling_params.model_dump().items():
         setattr(sampling_params, key, value)
 
+    # pass it as a proper object; not as a dictionary
+    if request.sampling_params.guided_decoding:
+        sampling_params.guided_decoding = request.sampling_params.guided_decoding
+
     response = llm.generate(
         f"""
             <start_of_turn>user

@@ -6,7 +6,9 @@ from mcp.types import (
     EmbeddedResource,
     ImageContent,
     TextContent,
+    PromptMessage,
 )
+from mcp_agent import AgentConfig
 from mcp_agent.agents.base_agent import BaseAgent
 from mcp_agent.core.prompt import Prompt
 from mcp_agent.llm.augmented_llm import (
@@ -32,7 +34,7 @@ from openai.types.chat import (
 from pydantic_core import from_json
 from rich.text import Text
 
-from oath_keepers.utils.typing import GenerateRequest, SamplingParams
+from oath_keepers.utils.typing import GenerateRequest, SamplingParams, GuidedDecodingParams
 
 
 class vLLM(AugmentedLLM):
@@ -71,6 +73,13 @@ class vLLM(AugmentedLLM):
 
         request_params = self.get_request_params(request_params=request_params)
         responses: List[TextContent | ImageContent | EmbeddedResource] = []
+
+        response_format = request_params.response_format
+        if response_format is not None:
+            json_schema = response_format.model_json_schema()
+            request_params.sampling_params = SamplingParams(
+                max_tokens=128, guided_decoding=GuidedDecodingParams.from_optional(json=json_schema)
+            )
 
         # TODO -- move this in to agent context management / agent group handling
         messages: List[ChatCompletionMessageParam] = []
@@ -296,14 +305,49 @@ class vLLM(AugmentedLLM):
             logger.warning(f"Failed to parse structured response: {str(e)}")
             return None, message
 
+    async def structured(
+        self,
+        multipart_messages: List[Union[PromptMessageMultipart, PromptMessage]],
+        model: Type[ModelT],
+        request_params: RequestParams | None = None,
+    ) -> Tuple[ModelT | None, PromptMessageMultipart]:
+        """Return a structured response from the LLM using the provided messages."""
+
+        # Convert PromptMessage to PromptMessageMultipart if needed
+        if multipart_messages and isinstance(multipart_messages[0], PromptMessage):
+            multipart_messages = PromptMessageMultipart.to_multipart(multipart_messages)
+
+        self._precall(multipart_messages)
+
+        result, assistant_response = await self._apply_prompt_provider_specific_structured(
+            multipart_messages, model, request_params
+        )
+
+        self._message_history.append(assistant_response)
+        return result, assistant_response
+
 
 class LocalAgent(BaseAgent):
+    def __init__(self, config: AgentConfig, **kwargs) -> None:
+        super().__init__(config, **kwargs)
+        self._llm = vLLM
+
     async def attach_llm(
         self,
         llm_factory: Union[Type[AugmentedLLMProtocol], Callable[..., AugmentedLLMProtocol]],
         **kwargs,
     ) -> AugmentedLLMProtocol:
         return await super().attach_llm(
-            llm_factory=vLLM,  # override factory with vLLM
+            llm_factory=self._llm,  # override factory with vLLM
             **kwargs,
+        )
+
+    async def structured(
+        self,
+        multipart_messages: List[PromptMessageMultipart],
+        model: Type[ModelT],
+        request_params: RequestParams | None = None,
+    ) -> Tuple[ModelT | None, PromptMessageMultipart]:
+        return await self._llm.structured(
+            multipart_messages=multipart_messages, model=model, request_params=request_params
         )

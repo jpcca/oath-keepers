@@ -1,7 +1,10 @@
 import asyncio
 
+from mcp_agent.core.prompt import Prompt
 from mcp_agent.core.request_params import RequestParams
 from mcp_agent.core.fastagent import FastAgent
+from pydantic import BaseModel
+
 from oath_keepers.vllm_client import LocalAgent
 from datetime import datetime
 
@@ -47,6 +50,12 @@ DO NOT:
 Always maintain professional boundaries and focus on helping patients organize their own observations."""
 
 
+class CandidateResponse(BaseModel):
+    Response: str
+    Type: str
+    Reason: str
+
+
 def save_conversation_with_timestamp(conversation_history):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"conversation_{timestamp}.txt"
@@ -60,10 +69,9 @@ def save_conversation_with_timestamp(conversation_history):
 
 @agents.custom(
     LocalAgent,
+    name="response_agent",
     instruction=PROMPT,
-    request_params=RequestParams(
-        use_history=True,
-    ),
+    request_params=RequestParams(response_format=CandidateResponse),
 )
 async def medical_assistant():
     async with agents.run() as agent:
@@ -87,34 +95,24 @@ async def medical_assistant():
 
             # Create context-aware prompt
             context = "\n".join(conversation_history[-8:])  # Keep last 6 exchanges
-            full_prompt = f"""Conversation so far:\n{context}\n
-You MUST respond in exactly this format:
-Response: [Your actual response to the patient]
-Type: [greeting/questioning/confirming/closing]
-Reason: [Your reasoning for this response approach and why this type is appropriate now]"""
+            full_prompt = f"""
+            You are a compassionate medical intake assistant AI designed to help patients articulate their symptoms more clearly before meeting with their doctor.
+            You are NOT a medical professional and cannot provide diagnoses, medical advice, or treatment recommendations.
+            Please provide 3 information below.
+            - Response: [Your actual response to the patient]
+            - Type: [greeting/questioning/confirming/closing]
+            - Reason: [Your reasoning for this response approach and why this type is appropriate now]
+            
+            Conversation so far:\n{context}\n
+            """
 
             try:
                 # Get AI response
-                response = await agent(full_prompt)
+                response, messages = await agent.response_agent.structured(
+                    multipart_messages=[Prompt.user(full_prompt)], model=CandidateResponse
+                )
 
-                # Parse the structured response
-                lines = response.strip().split("\n")
-                response_type = ""
-                response_text = ""
-                reason = ""
-
-                for line in lines:
-                    if line.strip().startswith("Type:"):
-                        response_type = line.replace("Type:", "").strip()
-                    elif line.strip().startswith("Response:"):
-                        response_text = line.replace("Response:", "").strip()
-                    elif line.strip().startswith("Reason:"):
-                        reason = line.replace("Reason:", "").strip()
-
-                # Display the response
-                print(f"\n[AI - {response_type}]")
-                print(f"AI: {response_text}")
-                print(f"(Reason: {reason})")
+                (_, response_text), (_, response_type), (_, reason) = response
 
                 # Add AI response to history
                 conversation_history.append(f"AI: {response_text}")
@@ -129,7 +127,7 @@ Reason: [Your reasoning for this response approach and why this type is appropri
 
             except Exception as e:
                 print(f"Error: {e}")
-                print("Raw AI Response:", response)
+                print("messages:", messages)
                 continue
 
 
