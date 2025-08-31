@@ -49,11 +49,11 @@ def save_conversation_with_timestamp(conversation_history):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"conversation_{timestamp}.txt"
 
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         f.write(f"Conversation saved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write("=" * 50 + "\n")
         for message in conversation_history:
-            f.write(message + '\n')
+            f.write(message + "\n")
 
 
 @agents.custom(LocalAgent, instruction=PROMPT)
@@ -68,8 +68,10 @@ async def medical_assistant():
             # Get patient input
             patient_input = input("Patient: ").strip()
 
-            if patient_input.lower() in ['quit', 'exit', 'bye']:
-                print("\nThank you for using the symptom clarification assistant. Good luck with your appointment!")
+            if patient_input.lower() in ["quit", "exit", "bye"]:
+                print(
+                    "\nThank you for using the symptom clarification assistant. Good luck with your appointment!"
+                )
                 break
 
             # Add patient input to history for context
@@ -88,7 +90,7 @@ Reason: [Your reasoning for this response approach and why this type is appropri
                 response = await agent(full_prompt)
 
                 # Parse the structured response
-                lines = response.strip().split('\n')
+                lines = response.strip().split("\n")
                 response_type = ""
                 response_text = ""
                 reason = ""
@@ -110,8 +112,10 @@ Reason: [Your reasoning for this response approach and why this type is appropri
                 conversation_history.append(f"AI: {response_text}")
 
                 # Check if conversation should end
-                if response_type.lower() == 'closing':
-                    print("\nConversation completed. Your symptoms have been organized for your doctor visit.")
+                if response_type.lower() == "closing":
+                    print(
+                        "\nConversation completed. Your symptoms have been organized for your doctor visit."
+                    )
                     save_conversation_with_timestamp(conversation_history)
                     break
 

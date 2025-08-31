@@ -75,8 +75,10 @@ async def medical_assistant():
             # Get patient input
             patient_input = input("Patient: ").strip()
 
-            if patient_input.lower() in ['quit', 'exit', 'bye']:
-                print("\nThank you for using the symptom clarification assistant. Good luck with your appointment!")
+            if patient_input.lower() in ["quit", "exit", "bye"]:
+                print(
+                    "\nThank you for using the symptom clarification assistant. Good luck with your appointment!"
+                )
                 break
 
             # Add patient input to history for context
@@ -101,7 +103,7 @@ async def medical_assistant():
                     print(f"   Response: {candidate['response_text']}")
 
                 # For demo, automatically select first candidate
-                selected = candidates['candidate_1']
+                selected = candidates["candidate_1"]
                 print(f"\n[Selected Response - {selected['type']}]")
                 print(f"AI: {selected['response_text']}")
 
@@ -109,8 +111,10 @@ async def medical_assistant():
                 conversation_history.append(f"AI: {selected['response_text']}")
 
                 # Check if conversation should end
-                if selected['type'] == 'closing':
-                    print("\nConversation completed. Your symptoms have been organized for your doctor visit.")
+                if selected["type"] == "closing":
+                    print(
+                        "\nConversation completed. Your symptoms have been organized for your doctor visit."
+                    )
                     break
 
             except json.JSONDecodeError as e:
@@ -134,7 +138,7 @@ async def medical_assistant_simple():
         while True:
             patient_input = input("Patient: ").strip()
 
-            if patient_input.lower() in ['quit', 'exit', 'bye']:
+            if patient_input.lower() in ["quit", "exit", "bye"]:
                 print("\nThank you! Good luck with your appointment!")
                 break
 
@@ -142,16 +146,18 @@ async def medical_assistant_simple():
             context = "\n".join(conversation_history[-10:])
 
             try:
-                response = await agent(f"Conversation so far:\n{context}\n\nProvide 3 candidates in JSON format.")
+                response = await agent(
+                    f"Conversation so far:\n{context}\n\nProvide 3 candidates in JSON format."
+                )
                 candidates = json.loads(response)
 
                 # Auto-select first candidate
-                selected = candidates['candidate_1']
+                selected = candidates["candidate_1"]
                 print(f"AI: {selected['response_text']}")
 
                 conversation_history.append(f"AI: {selected['response_text']}")
 
-                if selected['type'] == 'closing':
+                if selected["type"] == "closing":
                     break
 
             except Exception as e:

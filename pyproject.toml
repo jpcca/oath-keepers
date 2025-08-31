@@ -36,3 +36,8 @@ select = [
 # More lenient settings for existing code
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN"] # Don't require type annotations in tests
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.8",
+]
