@@ -14,6 +14,7 @@ BASE_PATH = "oath_keepers"
 LOG_PATH = f"{BASE_PATH}/log"
 PROMPT_PATH = f"{BASE_PATH}/prompts"
 
+
 class CandidateResponse(BaseModel):
     Response: str
     Type: str
@@ -24,11 +25,12 @@ def get_filename():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     return f"{LOG_PATH}/conversation_{timestamp}.txt"
 
+
 @agents.custom(
     LocalAgent,
     name="clarifier_agent",
     instruction=Path(f"{PROMPT_PATH}/clarifier_prompt.md").read_text(encoding="utf-8"),
-    use_history=True
+    use_history=True,
 )
 async def clarifier_assistant():
     async with agents.run() as agent:

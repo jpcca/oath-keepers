@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Callable, List, Tuple, Type, Union, cast
 
 from mcp.types import (
@@ -77,7 +76,8 @@ class vLLM(AugmentedLLM):
         response_format = request_params.response_format
         if response_format is not None:
             request_params.sampling_params = SamplingParams(
-                max_tokens=128, guided_decoding=GuidedDecodingParams.from_optional(json=response_format)
+                max_tokens=128,
+                guided_decoding=GuidedDecodingParams.from_optional(json=response_format),
             )
 
         # TODO -- move this in to agent context management / agent group handling
