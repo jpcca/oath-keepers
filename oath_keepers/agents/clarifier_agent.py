@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from oath_keepers.vllm_client import LocalAgent
 
-agents = FastAgent("medical-symptom-clarification")
+agents = FastAgent("medical-symptom-clarifier")
 
 PROMPT = """You are a compassionate medical intake assistant AI designed to help patients articulate their symptoms more clearly before meeting with their doctor. You are NOT a medical professional and cannot provide diagnoses, medical advice, or treatment recommendations.
 
@@ -68,10 +68,10 @@ def save_conversation_with_timestamp(conversation_history):
 
 @agents.custom(
     LocalAgent,
-    name="response_agent",
+    name="clarifier_agent",
     instruction=PROMPT,
 )
-async def medical_assistant():
+async def clarifier_assistant():
     async with agents.run() as agent:
         print("=== Medical Symptom Clarification Assistant ===")
         print("This AI will help you organize your symptoms before meeting with your doctor.\n")
@@ -106,7 +106,7 @@ async def medical_assistant():
 
             try:
                 # Get AI response
-                response, messages = await agent.response_agent.structured(
+                response, messages = await agent.clarifier_agent.structured(
                     multipart_messages=[Prompt.user(full_prompt)], model=CandidateResponse
                 )
 
@@ -129,9 +129,5 @@ async def medical_assistant():
                 continue
 
 
-def test_medical_assistant():
-    asyncio.run(medical_assistant())
-
-
 if __name__ == "__main__":
-    test_medical_assistant()
+    asyncio.run(clarifier_assistant())
