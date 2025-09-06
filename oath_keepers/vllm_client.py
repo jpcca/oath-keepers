@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Callable, List, Tuple, Type, Union, cast
 
 from mcp.types import (
@@ -344,6 +345,7 @@ class LocalAgent(BaseAgent):
         model: Type[ModelT],
         request_params: RequestParams | None = None,
     ) -> Tuple[ModelT | None, PromptMessageMultipart]:
+        # TODO: implement retry feature if the response is not structured
         return await self._llm.structured(
             multipart_messages=multipart_messages, model=model, request_params=request_params
         )

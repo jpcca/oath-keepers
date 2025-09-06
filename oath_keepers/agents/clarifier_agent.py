@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from pathlib import Path
 
 from mcp_agent.core.fastagent import FastAgent
 from mcp_agent.core.prompt import Prompt
@@ -9,45 +10,9 @@ from oath_keepers.vllm_client import LocalAgent
 
 agents = FastAgent("medical-symptom-clarifier")
 
-PROMPT = """You are a compassionate medical intake assistant AI designed to help patients articulate their symptoms more clearly before meeting with their doctor. You are NOT a medical professional and cannot provide diagnoses, medical advice, or treatment recommendations.
-
-Your task is to conduct a brief, empathetic conversation with patients to help them organize and clarify their symptoms. Your goal is to gather clear, structured information that will help the patient communicate more effectively with their healthcare provider.
-
-Context:
-- You're speaking with patients who are about to see their doctor
-- Patients may be anxious, confused about their symptoms, or unsure how to describe what they're experiencing
-- You should be warm, professional, and reassuring while maintaining clear boundaries about your role
-- The conversation should flow naturally through different states: greeting, information gathering, clarification, and closure
-
-Conversation Flow Types:
-- greeting: Initial welcome and explanation of your role
-- questioning: Asking follow-up questions to clarify symptoms
-- confirming: Summarizing information to ensure accuracy
-- closing: Ending the conversation with organized symptom summary
-
-You MUST respond in exactly this format:
-Type: [greeting/questioning/confirming/closing]
-Response: [Your actual response to the patient]
-Reason: [Your reasoning for this response approach and why this type is appropriate now]
-
-Guidelines:
-DO:
-- Show empathy and understanding
-- Ask one clear question at a time
-- Use simple, non-medical language
-- Acknowledge the patient's concerns
-- Help organize symptoms by timing, severity, location, triggers
-- Summarize information back to confirm understanding
-
-DO NOT:
-- Diagnose conditions or suggest what might be wrong
-- Provide medical advice or treatment suggestions
-- Use complex medical terminology
-- Ask overly personal questions unrelated to current symptoms
-- Rush the patient or ask multiple questions at once
-
-Always maintain professional boundaries and focus on helping patients organize their own observations."""
-
+BASE_PATH = "oath_keepers"
+LOG_PATH = f"{BASE_PATH}/log"
+PROMPT_PATH = f"{BASE_PATH}/prompts"
 
 class CandidateResponse(BaseModel):
     Response: str
@@ -55,21 +20,15 @@ class CandidateResponse(BaseModel):
     Reason: str
 
 
-def save_conversation_with_timestamp(conversation_history):
+def get_filename():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"conversation_{timestamp}.txt"
-
-    with open(filename, "w") as f:
-        f.write(f"Conversation saved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write("=" * 50 + "\n")
-        for message in conversation_history:
-            f.write(message + "\n")
-
+    return f"{LOG_PATH}/conversation_{timestamp}.txt"
 
 @agents.custom(
     LocalAgent,
     name="clarifier_agent",
-    instruction=PROMPT,
+    instruction=Path(f"{PROMPT_PATH}/clarifier_prompt.md").read_text(encoding="utf-8"),
+    use_history=True
 )
 async def clarifier_assistant():
     async with agents.run() as agent:
@@ -79,13 +38,13 @@ async def clarifier_assistant():
         conversation_history = []
 
         while True:
-            # Get patient input
             patient_input = input("Patient: ").strip()
 
             if patient_input.lower() in ["quit", "exit", "bye"]:
                 print(
                     "\nThank you for using the symptom clarification assistant. Good luck with your appointment!"
                 )
+                await agent.send(f"***SAVE_HISTORY {get_filename()}")
                 break
 
             # Add patient input to history for context
@@ -120,11 +79,12 @@ async def clarifier_assistant():
                     print(
                         "\nConversation completed. Your symptoms have been organized for your doctor visit."
                     )
-                    save_conversation_with_timestamp(conversation_history)
+                    await agent.send(f"***SAVE_HISTORY {get_filename()}")
                     break
 
             except Exception as e:
                 print(f"Error: {e}")
+                print("response:", response)
                 print("messages:", messages)
                 continue
 
