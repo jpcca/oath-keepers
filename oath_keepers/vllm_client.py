@@ -23,7 +23,6 @@ from mcp_agent.llm.usage_tracking import TurnUsage
 from mcp_agent.logging.logger import get_logger
 from mcp_agent.mcp.helpers.content_helpers import get_text
 from mcp_agent.mcp.prompt_message_multipart import PromptMessageMultipart
-from openai import NotGiven
 from openai._client import AsyncAPIClient
 from openai.types.chat import (
     ChatCompletion,
@@ -76,9 +75,8 @@ class vLLM(AugmentedLLM):
 
         response_format = request_params.response_format
         if response_format is not None:
-            json_schema = response_format.model_json_schema()
             request_params.sampling_params = SamplingParams(
-                max_tokens=128, guided_decoding=GuidedDecodingParams.from_optional(json=json_schema)
+                max_tokens=128, guided_decoding=GuidedDecodingParams.from_optional(json=response_format)
             )
 
         # TODO -- move this in to agent context management / agent group handling
@@ -282,9 +280,7 @@ class vLLM(AugmentedLLM):
         request_params = self.get_request_params(request_params)
 
         if not request_params.response_format:
-            schema = self.model_to_response_format(model)
-            if schema is not NotGiven:
-                request_params.response_format = schema
+            request_params.response_format = model.model_json_schema()
 
         result: PromptMessageMultipart = await self._apply_prompt_provider_specific(
             multipart_messages, request_params

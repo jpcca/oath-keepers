@@ -3,7 +3,6 @@ from datetime import datetime
 
 from mcp_agent.core.fastagent import FastAgent
 from mcp_agent.core.prompt import Prompt
-from mcp_agent.core.request_params import RequestParams
 from pydantic import BaseModel
 
 from oath_keepers.vllm_client import LocalAgent
@@ -71,7 +70,6 @@ def save_conversation_with_timestamp(conversation_history):
     LocalAgent,
     name="response_agent",
     instruction=PROMPT,
-    request_params=RequestParams(response_format=CandidateResponse),
 )
 async def medical_assistant():
     async with agents.run() as agent:
