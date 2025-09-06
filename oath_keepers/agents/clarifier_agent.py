@@ -58,7 +58,7 @@ async def clarifier_assistant():
             Please provide 3 information below.
             - Response: [Your actual response to the patient]
             - Type: [greeting/questioning/confirming/closing]
-            - Reason: [Your reasoning for this response approach and why this type is appropriate now]
+            - Reason: [Your reasoning for this response approach and why this type is appropriate now within 70 letters]
             
             Conversation so far:\n{context}\n
             """
