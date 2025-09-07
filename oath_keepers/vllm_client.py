@@ -285,7 +285,9 @@ class vLLM(AugmentedLLM):
         if "assistant" == last_message.role:
             return last_message
 
-        message_param = ChatCompletionUserMessageParam(role="user", content=get_text(last_message.content[0]))
+        message_param = ChatCompletionUserMessageParam(
+            role="user", content=get_text(last_message.content[0])
+        )
         responses: List[
             TextContent | ImageContent | EmbeddedResource
         ] = await self._vllm_completion(message_param, request_params)
