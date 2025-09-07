@@ -28,7 +28,7 @@ from openai.types.chat import (
     ChatCompletion,
     ChatCompletionAssistantMessageParam,
     ChatCompletionMessageParam,
-    ChatCompletionSystemMessageParam,
+    ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam,
 )
 from pydantic_core import from_json
 
@@ -58,7 +58,7 @@ class vLLM(AugmentedLLM):
 
         # Override with our specific settings
         base_params.maxTokens = 1024
-        base_params.max_iterations = 5
+        base_params.max_iterations = 10
         base_params.model = "vLLM"
 
         return base_params
@@ -262,7 +262,7 @@ class vLLM(AugmentedLLM):
 
     async def _apply_prompt_provider_specific(
         self,
-        multipart_messages: List["PromptMessageMultipart"],
+        multipart_messages: List[PromptMessageMultipart],
         request_params: RequestParams | None = None,
         is_template: bool = False,
     ) -> PromptMessageMultipart:
@@ -277,14 +277,14 @@ class vLLM(AugmentedLLM):
         for msg in messages_to_add:
             converted.append(OpenAIConverter.convert_to_openai(msg))
 
-        # TODO -- this looks like a defect from previous apply_prompt implementation.
+        # Add messages to history
         self.history.extend(converted, is_prompt=is_template)
 
+        # For assistant messages: Return the last message (no completion needed)
         if "assistant" == last_message.role:
             return last_message
 
-        # For assistant messages: Return the last message (no completion needed)
-        message_param: OpenAIMessage = OpenAIConverter.convert_to_openai(last_message)
+        message_param = ChatCompletionUserMessageParam(role="user", content=get_text(last_message.content[0]))
         responses: List[
             TextContent | ImageContent | EmbeddedResource
         ] = await self._vllm_completion(message_param, request_params)
