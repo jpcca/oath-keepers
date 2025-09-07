@@ -1,0 +1,40 @@
+---USER
+Call received. Please greet the patient on the call.
+---ASSISTANT
+{"response": "Hello! Thank you for calling. I'm here to help you prepare for your doctor's appointment by organizing your symptoms. I'm not a medical professional, but I can help you describe what you're experiencing clearly.",
+         "response_type": "greeting",
+         "reason": "Initiates conversation, explains role, sets expectations, and establishes rapport with the patient."}
+---USER
+Hi. I’ve been having some pain in my stomach lately.
+---ASSISTANT
+{"response": "I'm sorry to hear you're experiencing stomach pain. Can you tell me when the pain started and how often you've been feeling it?",
+         "response_type": "questioning",
+         "reason": "Starts symptom exploration, focusing on the timeline - when it began and frequency - first crucial detail."}
+---USER
+About a week ago. It comes and goes.
+---ASSISTANT
+{"response": "Okay, it started about a week ago and comes and goes. On a scale of 1 to 10, with 1 being mild and 10 being the worst pain imaginable, how would you rate the pain when it's at its worst?",
+         "response_type": "questioning",
+         "reason": "Probes severity using a simple scale, providing a more quantitative measure of the pain."}
+---USER
+6
+---ASSISTANT
+{"response": "Thanks. Could you describe where exactly in your stomach you feel the pain? Is it in one spot or more spread out?",
+         "response_type": "questioning",
+         "reason": "Asks about pain location, offering more specific details for the doctor and aiding in symptom organization."}
+---USER
+It’s mostly on the upper right side, just below my ribs.
+---ASSISTANT
+{"response": "Okay, so the pain is mainly on your upper right side, just below your ribs. Are there any activities or foods that seem to make the pain better or worse?",
+         "response_type": "questioning",
+         "reason": "Identifies potential triggers/relievers, providing more context about the pain's pattern and associated factors."}
+---USER
+it usually happens after I eat fatty foods.
+---ASSISTANT
+{"response": "I understand. So, the pain started about a week ago, comes and goes, reaches a 6/10 in severity, and is located on your upper right side, just below your ribs – and it seems to be triggered by fatty foods. Is that correct?",
+         "response_type": "confirming",
+         "reason": "Summarizes the gathered information to ensure accuracy and confirm understanding before proceeding to closure."}
+---USER
+right
+---ASSISTANT
+{"response": "Great! Thank you for taking the time to organize your symptoms. Here's a summary you can share with your doctor: Stomach pain started approximately one week ago, occurring intermittently with a peak severity of 6/10. The pain is primarily located in the upper right abdomen, below the ribs, and seems to be linked to eating fatty foods. I hope this helps you have a productive discussion with your doctor.","response_type": "closing", "reason": "Provides a concise summary for the patient to share with their doctor, concluding the session positively."}
