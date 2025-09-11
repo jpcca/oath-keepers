@@ -1,6 +1,9 @@
 [project]
 dependencies = [
+  "deeponto>=0.9.3",
   "fast-agent-mcp>=0.2.35",
+  "matplotlib>=3.10.6",
+  "rapidfuzz>=3.14.1",
 ]
 description = "Add your description here"
 name = "oath-keepers"
