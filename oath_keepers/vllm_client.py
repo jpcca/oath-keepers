@@ -5,8 +5,10 @@ from mcp.types import (
     CallToolRequestParams,
     EmbeddedResource,
     ImageContent,
+    PromptMessage,
     TextContent,
 )
+from mcp_agent import AgentConfig
 from mcp_agent.agents.base_agent import BaseAgent
 from mcp_agent.core.prompt import Prompt
 from mcp_agent.llm.augmented_llm import (
@@ -16,23 +18,22 @@ from mcp_agent.llm.augmented_llm import (
     RequestParams,
 )
 from mcp_agent.llm.provider_types import Provider
-from mcp_agent.llm.providers.multipart_converter_openai import OpenAIConverter, OpenAIMessage
+from mcp_agent.llm.providers.multipart_converter_openai import OpenAIConverter
 from mcp_agent.llm.usage_tracking import TurnUsage
 from mcp_agent.logging.logger import get_logger
 from mcp_agent.mcp.helpers.content_helpers import get_text
 from mcp_agent.mcp.prompt_message_multipart import PromptMessageMultipart
-from openai import NotGiven
 from openai._client import AsyncAPIClient
 from openai.types.chat import (
     ChatCompletion,
+    ChatCompletionAssistantMessageParam,
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
-    ChatCompletionToolParam,
+    ChatCompletionUserMessageParam,
 )
 from pydantic_core import from_json
-from rich.text import Text
 
-from oath_keepers.utils.typing import GenerateRequest, SamplingParams
+from oath_keepers.utils.typing import GenerateRequest, GuidedDecodingParams, SamplingParams
 
 
 class vLLM(AugmentedLLM):
@@ -53,26 +54,55 @@ class vLLM(AugmentedLLM):
         )
 
     def _initialize_default_params(self, kwargs: dict) -> RequestParams:
-        """Initialize Anthropic-specific default parameters"""
-        request_params = super()._initialize_default_params(kwargs)
-        request_params.sampling_params = SamplingParams(max_tokens=128)
-        request_params.model = "vLLM"
+        """Initialize vLLM-specific default parameters"""
+        base_params = super()._initialize_default_params(kwargs)
 
-        return request_params
+        # Override with our specific settings
+        base_params.maxTokens = 1024
+        base_params.max_iterations = 10
+        base_params.model = "vLLM"
+
+        return base_params
+
+    @staticmethod
+    def _convert_messages_to_prompt(messages: List[ChatCompletionMessageParam]) -> str:
+        """Convert OpenAI-style messages to a single prompt string for vLLM"""
+        prompt_parts = []
+
+        for message in messages:
+            role = message.get("role", "")
+            content = message.get("content", "")
+
+            if role == "system":
+                prompt_parts.append(f"System: {content}")
+            elif role == "user":
+                prompt_parts.append(f"User: {content}")
+            elif role == "assistant":
+                prompt_parts.append(f"Assistant: {content}")
+
+        return "\n\n".join(prompt_parts)
 
     async def _vllm_completion(
         self,
-        message: OpenAIMessage,
+        message: ChatCompletionMessageParam,
         request_params: RequestParams | None = None,
     ) -> List[TextContent | ImageContent | EmbeddedResource]:
         """
-        Process a query using an LLM provided by the vLLM library and available tools.
+        Process a query using vLLM and available tools.
         """
 
-        request_params = self.get_request_params(request_params=request_params)
+        # Store responses of this function
         responses: List[TextContent | ImageContent | EmbeddedResource] = []
 
-        # TODO -- move this in to agent context management / agent group handling
+        # preparing vllm sampling params
+        request_params = self.get_request_params(request_params=request_params)
+        sampling_params = SamplingParams(max_tokens=request_params.maxTokens)
+        if request_params.response_format is not None:
+            sampling_params.guided_decoding = GuidedDecodingParams.from_optional(
+                json=request_params.response_format
+            )
+
+        # Build messages list
         messages: List[ChatCompletionMessageParam] = []
         system_prompt = self.instruction or request_params.systemPrompt
         if system_prompt:
@@ -81,160 +111,159 @@ class vLLM(AugmentedLLM):
         messages.extend(self.history.get(include_completion_history=request_params.use_history))
         messages.append(message)
 
-        response = await self.aggregator.list_tools()
-        available_tools: List[ChatCompletionToolParam] | None = [
-            ChatCompletionToolParam(
-                type="function",
-                function={
-                    "name": tool.name,
-                    "description": tool.description if tool.description else "",
-                    "parameters": self.adjust_schema(tool.inputSchema),
-                },
-            )
-            for tool in response.tools
-        ]
+        # Convert messages list to prompt format for vLLM
+        prompt_text = self._convert_messages_to_prompt(messages)
 
-        # we do NOT send "stop sequences" as this causes errors with mutlimodal processing
+        # Check for tool availability
+        aggregator_response = await self.aggregator.list_tools()
+        has_tools = bool(aggregator_response.tools)
+
+        if has_tools:
+            # Add tool information to prompt
+            tool_descriptions = []
+            for tool in aggregator_response.tools:
+                tool_desc = f"- {tool.name}: {tool.description or 'No description'}"
+                tool_descriptions.append(tool_desc)
+
+            prompt_text += "\n\nAvailable tools:\n" + "\n".join(tool_descriptions)
+            prompt_text += (
+                "\n\nIf you need to use a tool, respond with: TOOL_CALL: tool_name {arguments}"
+            )
+
+        # Store the final assistant response for history
+        final_assistant_content = ""
+
         for i in range(request_params.max_iterations):
             self._log_chat_progress(self.chat_turn(), model=self.default_request_params.model)
 
-            response = await self._vllm_client().post(
-                f"{self.base_url}/generate",
-                cast_to=ChatCompletion,
-                body=GenerateRequest(
-                    prompts=message["content"],
-                    sampling_params=request_params.sampling_params,
-                ).model_dump(),
-            )
-
-            # Track usage if response is valid and has usage data
-            if (
-                hasattr(response, "usage")
-                and response.usage
-                and not isinstance(response, BaseException)
-            ):
-                try:
-                    model_name = self.default_request_params.model
-                    turn_usage = TurnUsage.from_openai(response.usage, model_name)
-                    self._finalize_turn_usage(turn_usage)
-                except Exception as e:
-                    self.logger.warning(f"Failed to track usage: {e}")
-
-            self.logger.debug(
-                "OpenAI completion response:",
-                data=response,
-            )
-
-            if isinstance(response, BaseException):
-                self.logger.error(f"Error: {response}")
-                break
-
-            if not response.choices or len(response.choices) == 0:
-                # No response from the model, we're done
-                break
-
-            choice = response.choices[0]
-            message = choice.message
-            # prep for image/audio gen models
-            if message.content:
-                responses.append(TextContent(type="text", text=message.content))
-
-            # ParsedChatCompletionMessage is compatible with ChatCompletionMessage
-            # since it inherits from it, so we can use it directly
-            messages.append(message)
-
-            message_text = message.content
-            if choice.finish_reason in ["tool_calls", "function_call"] and message.tool_calls:
-                if message_text:
-                    await self.show_assistant_message(
-                        message_text,
-                        message.tool_calls[
-                            0
-                        ].function.name,  # TODO support displaying multiple tool calls
-                    )
-                else:
-                    await self.show_assistant_message(
-                        Text(
-                            "the assistant requested tool calls",
-                            style="dim green italic",
-                        ),
-                        message.tool_calls[0].function.name,
-                    )
-
-                tool_results = []
-                for tool_call in message.tool_calls:
-                    self.show_tool_call(
-                        available_tools,
-                        tool_call.function.name,
-                        tool_call.function.arguments,
-                    )
-                    tool_call_request = CallToolRequest(
-                        method="tools/call",
-                        params=CallToolRequestParams(
-                            name=tool_call.function.name,
-                            arguments={}
-                            if not tool_call.function.arguments
-                            or tool_call.function.arguments.strip() == ""
-                            else from_json(tool_call.function.arguments, allow_partial=True),
-                        ),
-                    )
-                    result = await self.call_tool(tool_call_request, tool_call.id)
-                    self.show_oai_tool_result(str(result))
-
-                    tool_results.append((tool_call.id, result))
-                    responses.extend(result.content)
-                messages.extend(OpenAIConverter.convert_function_results_to_openai(tool_results))
-
-                self.logger.debug(
-                    f"Iteration {i}: Tool call results: {str(tool_results) if tool_results else 'None'}"
+            try:
+                # Make request to vLLM server
+                response = await self._vllm_client().post(
+                    "/generate",
+                    cast_to=ChatCompletion,
+                    body=GenerateRequest(
+                        prompts=prompt_text,
+                        sampling_params=sampling_params,
+                    ).model_dump(),
                 )
-            elif choice.finish_reason == "length":
-                # We have reached the max tokens limit
-                self.logger.debug(f"Iteration {i}: Stopping because finish_reason is 'length'")
-                if request_params and request_params.maxTokens is not None:
-                    message_text = Text(
-                        f"the assistant has reached the maximum token limit ({request_params.maxTokens})",
-                        style="dim green italic",
-                    )
+
+                # Track usage if available
+                if hasattr(response, "usage") and response.usage:
+                    try:
+                        model_name = self.default_request_params.model
+                        turn_usage = TurnUsage.from_openai(response.usage, model_name)
+                        self._finalize_turn_usage(turn_usage)
+                    except Exception as e:
+                        self.logger.warning(f"Failed to track usage: {e}")
+
+                self.logger.debug("vLLM completion response:", data=response)
+
+                if isinstance(response, BaseException):
+                    self.logger.error(f"Error: {response}")
+                    break
+
+                if not response.choices or len(response.choices) == 0:
+                    break
+
+                choice = response.choices[0]
+                message_content = choice.message.content
+
+                if not message_content:
+                    break
+
+                # Check for tool calls in response
+                if has_tools and "TOOL_CALL:" in message_content:
+                    # Parse tool call from response
+                    lines = message_content.split("\n")
+                    tool_call_line = None
+                    regular_content = []
+
+                    for line in lines:
+                        if line.strip().startswith("TOOL_CALL:"):
+                            tool_call_line = line
+                        else:
+                            regular_content.append(line)
+
+                    # Show regular content if any
+                    if regular_content:
+                        regular_text = "\n".join(regular_content).strip()
+                        if regular_text:
+                            await self.show_assistant_message(regular_text)
+                            responses.append(TextContent(type="text", text=regular_text))
+                            final_assistant_content += regular_text
+
+                    # If there is a line starting with "TOOL_CALL:", call the tool
+                    if tool_call_line:
+                        # Parse tool call
+                        tool_call_content = tool_call_line.replace("TOOL_CALL:", "").strip()
+                        parts = tool_call_content.split(" ", 1)
+                        tool_name = parts[0]
+                        tool_args = parts[1] if len(parts) > 1 else "{}"
+
+                        # Execute tool call
+                        try:
+                            tool_call_request = CallToolRequest(
+                                method="tools/call",
+                                params=CallToolRequestParams(
+                                    name=tool_name,
+                                    arguments=from_json(tool_args, allow_partial=True)
+                                    if tool_args.strip() != "{}"
+                                    else {},
+                                ),
+                            )
+
+                            result = await self.call_tool(tool_call_request, None)
+                            self.show_tool_result(result)
+                            responses.extend(result.content)
+
+                            # Update prompt with tool result for next iteration
+                            prompt_text += f"\n\nTool result: {str(result)}"
+
+                        except Exception as e:
+                            self.logger.error(f"Tool call failed: {e}")
+                            await self.show_assistant_message(f"Tool call failed: {e}")
+                            final_assistant_content += f"Tool call failed: {e}"
+                            break
                 else:
-                    message_text = Text(
-                        "the assistant has reached the maximum token limit",
-                        style="dim green italic",
-                    )
+                    # No tool calls, regular response
+                    responses.append(TextContent(type="text", text=message_content))
+                    await self.show_assistant_message(message_content)
+                    final_assistant_content = message_content
+                    break
 
-                await self.show_assistant_message(message_text)
-                break
-            elif choice.finish_reason == "content_filter":
-                # The response was filtered by the content filter
-                self.logger.debug(
-                    f"Iteration {i}: Stopping because finish_reason is 'content_filter'"
-                )
-                break
-            elif choice.finish_reason == "stop":
-                self.logger.debug(f"Iteration {i}: Stopping because finish_reason is 'stop'")
-                if message_text:
-                    await self.show_assistant_message(message_text, "")
+            except Exception as e:
+                self.logger.error(f"vLLM completion failed: {e}")
                 break
 
+        # Add both user and assistant messages to history if using history
         if request_params.use_history:
-            # Get current prompt messages
+            # Get current prompt messages to calculate what's new
             prompt_messages = self.history.get(include_completion_history=False)
 
-            # Calculate new conversation messages (excluding prompts)
+            # Calculate new conversation messages (excluding existing prompts and system message)
             new_messages = messages[len(prompt_messages) :]
 
-            if system_prompt:
+            # Remove system message from new_messages if it was added
+            if system_prompt and new_messages and new_messages[0].get("role") == "system":
                 new_messages = new_messages[1:]
 
-            self.history.set(new_messages)
+            # Add the assistant response to complete the conversation
+            if final_assistant_content:
+                new_messages.append(
+                    ChatCompletionAssistantMessageParam(
+                        role="assistant", content=final_assistant_content
+                    )
+                )
+
+            # Extend history with all new messages (both user and assistant)
+            self.history.extend(new_messages)
 
         self._log_chat_finished(model=self.default_request_params.model)
-
         return responses
 
     async def _apply_prompt_provider_specific(
         self,
-        multipart_messages: List["PromptMessageMultipart"],
+        multipart_messages: List[PromptMessageMultipart],
         request_params: RequestParams | None = None,
         is_template: bool = False,
     ) -> PromptMessageMultipart:
@@ -249,14 +278,16 @@ class vLLM(AugmentedLLM):
         for msg in messages_to_add:
             converted.append(OpenAIConverter.convert_to_openai(msg))
 
-        # TODO -- this looks like a defect from previous apply_prompt implementation.
+        # Add messages to history
         self.history.extend(converted, is_prompt=is_template)
 
+        # For assistant messages: Return the last message (no completion needed)
         if "assistant" == last_message.role:
             return last_message
 
-        # For assistant messages: Return the last message (no completion needed)
-        message_param: OpenAIMessage = OpenAIConverter.convert_to_openai(last_message)
+        message_param = ChatCompletionUserMessageParam(
+            role="user", content=get_text(last_message.content[0])
+        )
         responses: List[
             TextContent | ImageContent | EmbeddedResource
         ] = await self._vllm_completion(message_param, request_params)
@@ -273,9 +304,7 @@ class vLLM(AugmentedLLM):
         request_params = self.get_request_params(request_params)
 
         if not request_params.response_format:
-            schema = self.model_to_response_format(model)
-            if schema is not NotGiven:
-                request_params.response_format = schema
+            request_params.response_format = model.model_json_schema()
 
         result: PromptMessageMultipart = await self._apply_prompt_provider_specific(
             multipart_messages, request_params
@@ -296,14 +325,50 @@ class vLLM(AugmentedLLM):
             logger.warning(f"Failed to parse structured response: {str(e)}")
             return None, message
 
+    async def structured(
+        self,
+        multipart_messages: List[Union[PromptMessageMultipart, PromptMessage]],
+        model: Type[ModelT],
+        request_params: RequestParams | None = None,
+    ) -> Tuple[ModelT | None, PromptMessageMultipart]:
+        """Return a structured response from the LLM using the provided messages."""
+
+        # Convert PromptMessage to PromptMessageMultipart if needed
+        if multipart_messages and isinstance(multipart_messages[0], PromptMessage):
+            multipart_messages = PromptMessageMultipart.to_multipart(multipart_messages)
+
+        self._precall(multipart_messages)
+
+        result, assistant_response = await self._apply_prompt_provider_specific_structured(
+            multipart_messages, model, request_params
+        )
+
+        self._message_history.append(assistant_response)
+        return result, assistant_response
+
 
 class LocalAgent(BaseAgent):
+    def __init__(self, config: AgentConfig, **kwargs) -> None:
+        super().__init__(config, **kwargs)
+        self._llm = vLLM
+
     async def attach_llm(
         self,
         llm_factory: Union[Type[AugmentedLLMProtocol], Callable[..., AugmentedLLMProtocol]],
         **kwargs,
     ) -> AugmentedLLMProtocol:
         return await super().attach_llm(
-            llm_factory=vLLM,  # override factory with vLLM
+            llm_factory=self._llm,  # override factory with vLLM
             **kwargs,
+        )
+
+    async def structured(
+        self,
+        multipart_messages: List[PromptMessageMultipart],
+        model: Type[ModelT],
+        request_params: RequestParams | None = None,
+    ) -> Tuple[ModelT | None, PromptMessageMultipart]:
+        # TODO: implement retry feature if the response is not structured
+        return await self._llm.structured(
+            multipart_messages=multipart_messages, model=model, request_params=request_params
         )
