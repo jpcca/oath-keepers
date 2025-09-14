@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from pathlib import Path
+from enum import Enum
 
 from mcp_agent.core.fastagent import FastAgent
 from mcp_agent.core.prompt import Prompt
@@ -14,9 +15,16 @@ log_path = f"{base_path}/log"
 prompt_path = f"{base_path}/prompts"
 
 
+class ResponseType(str, Enum):
+    greeting = "greeting"
+    questioning = "questioning"
+    confirming = "confirming"
+    closing = "closing"
+
+
 class CandidateResponse(BaseModel):
     response: str
-    response_type: str
+    response_type: ResponseType
     reason: str
 
 
@@ -53,23 +61,25 @@ async def clarifier_assistant():
 
             try:
                 # Get AI response
-                response, messages = await agent.clarifier_agent.structured(
+                result, messages = await agent.clarifier_agent.structured(
                     multipart_messages=[Prompt.user(patient_input)], model=CandidateResponse
                 )
-                (_, response_text), (_, response_type), (_, reason) = response
-                print(f"Assistant: {response_text}")
+                if result is None:
+                    raise ValueError("Failed to parse structured response")
+
+                print(f"Assistant: {result.response}")
                 turn_count += 1
 
                 # Check if conversation should end
-                if response_type.lower() == "closing":
+                if result.response_type is ResponseType.closing:
                     print(f"\nConversation completed at turn {turn_count}.")
                     await agent.send(f"***SAVE_HISTORY {get_filename()}")
                     break
 
             except Exception as e:
                 print(f"Error: {e}")
-                print("response:", response)
-                print("messages:", messages)
+                print("result:", locals().get("result"))
+                print("messages:", locals().get("messages"))
                 continue
 
 

@@ -23,7 +23,6 @@ async def generate(request: GenerateRequest) -> ChatCompletion:
     for key, value in request.sampling_params.model_dump().items():
         setattr(sampling_params, key, value)
 
-    # pass it as a proper object; not as a dictionary
     if request.sampling_params.guided_decoding:
         sampling_params.guided_decoding = request.sampling_params.guided_decoding
 
@@ -62,8 +61,8 @@ async def generate(request: GenerateRequest) -> ChatCompletion:
             completion_tokens=sum(len(output.token_ids) for output in response.outputs),
             prompt_tokens=len(response.prompt_token_ids),
             total_tokens=(
-                sum(len(output.token_ids) for output in response.outputs)
-                + len(response.prompt_token_ids)
+                    sum(len(output.token_ids) for output in response.outputs)
+                    + len(response.prompt_token_ids)
             ),
         ),
     )
@@ -72,7 +71,7 @@ async def generate(request: GenerateRequest) -> ChatCompletion:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--model", type=str, default="google/gemma-3-1b-it")
+    parser.add_argument("--model", type=str, default="google/gemma-3-12b-it")
     args = parser.parse_args()
 
     llm = LLM(model=args.model)
