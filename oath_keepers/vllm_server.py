@@ -61,8 +61,8 @@ async def generate(request: GenerateRequest) -> ChatCompletion:
             completion_tokens=sum(len(output.token_ids) for output in response.outputs),
             prompt_tokens=len(response.prompt_token_ids),
             total_tokens=(
-                    sum(len(output.token_ids) for output in response.outputs)
-                    + len(response.prompt_token_ids)
+                sum(len(output.token_ids) for output in response.outputs)
+                + len(response.prompt_token_ids)
             ),
         ),
     )
