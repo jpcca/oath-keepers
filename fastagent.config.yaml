@@ -1,6 +1,6 @@
 generic:
-    api_key: "vllm"
-    base_url: "http://localhost:8000"
+    api_key: "ollama"
+    base_url: "http://localhost:11435/v1"
 
 default_model: generic.llama3.2:latest
 execution_engine: asyncio
