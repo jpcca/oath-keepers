@@ -40,11 +40,11 @@ def get_filename():
     use_history=True,
 )
 
-# For testing MedGemma model (via ollama), comment out `@agents.custom` above and uncomment here
+# To run with MedGemma or other model via Ollama, comment out `@agents.custom` above and uncomment here
 # @agents.agent(
 #     name="clarifier_agent",
 #     instruction=Path(f"{prompt_path}/clarifier_prompt.md").read_text(encoding="utf-8"),
-#     model="generic.alibayram/medgemma:27b",
+#     model="generic.alibayram/medgemma:27b",  # or other models e.g. "generic.gemma3:12b"
 #     use_history=True,
 # )
 
