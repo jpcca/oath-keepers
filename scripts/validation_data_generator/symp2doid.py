@@ -87,7 +87,7 @@ def symp2doid_by_keyword(df_symp: DataFrame, df_doid: DataFrame, topk=5):
         _df_symp["iri"], topk_doid_iris, topk_confidences
     ):
         for doid_iri, confidence in zip(topk_doid_iri, topk_confidence):
-            results.append([doid_iri, symp_iri, "keyword", confidence])
+            results.append([doid_iri, symp_iri, "keyword", confidence/100])
 
     return pd.DataFrame(results, columns=["doid_iri", "symptom_iri", "method", "score"])
 
