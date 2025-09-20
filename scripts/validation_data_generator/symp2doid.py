@@ -148,7 +148,7 @@ if __name__ == "__main__":
     print("Running levenshtein-based matching...")
     df_result_levenshtein = symp2doid_by_sentence(df_symp, df_doid, logic="levenshtein", topk=5)
     df_results_levenshtein = join_info(df_result_levenshtein, df_doid, df_symp)
-    df_results_levenshtein.to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_keyword.tsv", sep="\t", index=False)
+    df_results_levenshtein.to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_levenshtein.tsv", sep="\t", index=False)
 
     # Run cosine-based matching
     print("Running cosine-based matching...")
