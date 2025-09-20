@@ -16,6 +16,25 @@ from rapidfuzz.process import cdist
 from sentence_transformers import SentenceTransformer, util
 
 
+def join_info(df_result, df_doid, df_symp):
+    return (
+        pd.merge(
+            pd.merge(
+                df_result,
+                df_doid[["iri", "name"]].rename({"name": "disease_name", "iri": "doid_iri"}, axis=1),
+                on="doid_iri",
+                how="inner",
+            ),
+            df_symp[["iri", "name", "definition"]].rename(
+                {"name": "symptom_name", "definition": "symptom_definition", "iri": "symp_iri"}, axis=1
+            ),
+            on="symp_iri",
+            how="inner",
+        )
+        .sort_values(["symp_iri", "doid_iri"])
+    )[["symp_iri", "doid_iri", "disease_name", "symptom_name", "symptom_definition", "method", "score"]]
+
+
 def doid2symp_by_axiom(doid_onto: Ontology, doid_list: List):
     """
     RO_0002452(has_symp) を使った axiom ベースのマッチング
@@ -27,7 +46,7 @@ def doid2symp_by_axiom(doid_onto: Ontology, doid_list: List):
     Arguments:
         doid_onto:  Ontology instance for DOID.owl
     Returns:
-        Dict of doid_iri -> List of tuples (symptom_iri, method, score)
+        Dict of doid_iri -> List of tuples (symp_iri, method, score)
         where method is "axiom" and score is 1.0
     """
     result = []
@@ -42,7 +61,7 @@ def doid2symp_by_axiom(doid_onto: Ontology, doid_list: List):
                     symp_iri = str(filler.getIRI())
                     result.append([doid_iri, symp_iri, "axiom", 1.0])
 
-    return pd.DataFrame(result, columns=["doid_iri", "symptom_iri", "method", "score"])
+    return pd.DataFrame(result, columns=["doid_iri", "symp_iri", "method", "score"])
 
 
 def symp2doid_by_sentence(df_symp: DataFrame, df_doid: DataFrame, logic: str, topk: int = 5):
@@ -58,7 +77,7 @@ def symp2doid_by_sentence(df_symp: DataFrame, df_doid: DataFrame, logic: str, to
         logic: "levenshtein" or "cosine"
         topk: Return top k results for each doid
     Returns:
-        Dict of doid_iri -> List of tuples (symptom_iri, method)
+        Dict of doid_iri -> List of tuples (symp_iri, method)
         where method is "synonym"
     """
     results = []
@@ -110,7 +129,7 @@ def symp2doid_by_sentence(df_symp: DataFrame, df_doid: DataFrame, logic: str, to
         for doid_iri, confidence in zip(topk_doid_iri, topk_score):
             results.append([doid_iri, symp_iri, logic, confidence])
 
-    return pd.DataFrame(results, columns=["doid_iri", "symptom_iri", "method", "score"])
+    return pd.DataFrame(results, columns=["doid_iri", "symp_iri", "method", "score"])
 
 
 if __name__ == "__main__":
@@ -121,56 +140,20 @@ if __name__ == "__main__":
 
     # Run axiom-based matching
     print("Running axiom-based matching...")
-    df_results_axiom = doid2symp_by_axiom(doid_onto, doid_list)
-    (
-        df_results_axiom.set_index("doid_iri")
-        .join(df_doid.set_index("iri")["name"].rename("doid_name"))
-        .reset_index()
-        .set_index("symptom_iri")
-        .join(
-            df_symp.set_index("iri")[["name", "definition"]].rename(
-                {"name": "symptom_name", "definition": "symptom_definition"}, axis=1
-            )
-        )
-        .reset_index()
-        .rename({"index": "symptom_iri"}, axis=1)
-        .sort_values(["doid_iri", "symptom_iri"])
-    ).to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_axiom.tsv", sep="\t", index=False)
+    df_result_axiom = doid2symp_by_axiom(doid_onto, doid_list)
+    df_result_axiom = join_info(df_result_axiom, df_doid, df_symp)
+    df_result_axiom.to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_axiom.tsv", sep="\t", index=False)
 
     # Run levenshtein-based matching
     print("Running levenshtein-based matching...")
-    df_results_keyword = symp2doid_by_sentence(df_symp, df_doid, logic="levenshtein", topk=5)
-    (
-        df_results_keyword.set_index("doid_iri")
-        .join(df_doid.set_index("iri")["name"].rename("doid_name"))
-        .reset_index()
-        .set_index("symptom_iri")
-        .join(
-            df_symp.set_index("iri")[["name", "definition"]].rename(
-                {"name": "symptom_name", "definition": "symptom_definition"}, axis=1
-            )
-        )
-        .reset_index()
-        .rename({"index": "symptom_iri"}, axis=1)
-        .sort_values(["doid_iri", "symptom_iri"])
-    ).to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_keyword.tsv", sep="\t", index=False)
+    df_result_levenshtein = symp2doid_by_sentence(df_symp, df_doid, logic="levenshtein", topk=5)
+    df_results_levenshtein = join_info(df_result_levenshtein, df_doid, df_symp)
+    df_results_levenshtein.to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_keyword.tsv", sep="\t", index=False)
 
     # Run cosine-based matching
     print("Running cosine-based matching...")
-    df_results_semantic = symp2doid_by_sentence(df_symp, df_doid, logic="cosine", topk=5)
-    (
-        df_results_semantic.set_index("doid_iri")
-        .join(df_doid.set_index("iri")["name"].rename("doid_name"))
-        .reset_index()
-        .set_index("symptom_iri")
-        .join(
-            df_symp.set_index("iri")[["name", "definition"]].rename(
-                {"name": "symptom_name", "definition": "symptom_definition"}, axis=1
-            )
-        )
-        .reset_index()
-        .rename({"index": "symptom_iri"}, axis=1)
-        .sort_values(["doid_iri", "symptom_iri"])
-    ).to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_semantic.tsv", sep="\t", index=False)
+    df_result_semantic = symp2doid_by_sentence(df_symp, df_doid, logic="cosine", topk=5)
+    df_result_semantic = join_info(df_result_semantic, df_doid, df_symp)
+    df_result_semantic.to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_semantic.tsv", sep="\t", index=False)
 
     print("complete!")
