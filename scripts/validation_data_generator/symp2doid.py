@@ -21,18 +21,32 @@ def join_info(df_result, df_doid, df_symp):
         pd.merge(
             pd.merge(
                 df_result,
-                df_doid[["iri", "name"]].rename({"name": "disease_name", "iri": "doid_iri"}, axis=1),
+                df_doid[["iri", "name", "definition"]].rename(
+                    {"name": "disease_name", "definition": "disease_definition", "iri": "doid_iri"},
+                    axis=1,
+                ),
                 on="doid_iri",
                 how="inner",
             ),
             df_symp[["iri", "name", "definition"]].rename(
-                {"name": "symptom_name", "definition": "symptom_definition", "iri": "symp_iri"}, axis=1
+                {"name": "symptom_name", "definition": "symptom_definition", "iri": "symp_iri"},
+                axis=1,
             ),
             on="symp_iri",
             how="inner",
-        )
-        .sort_values(["symp_iri", "doid_iri"])
-    )[["symp_iri", "doid_iri", "disease_name", "symptom_name", "symptom_definition", "method", "score"]]
+        ).sort_values(["symp_iri", "doid_iri"])
+    )[
+        [
+            "symp_iri",
+            "doid_iri",
+            "symptom_name",
+            "disease_name",
+            "symptom_definition",
+            "disease_definition",
+            "method",
+            "score",
+        ]
+    ]
 
 
 def doid2symp_by_axiom(doid_onto: Ontology, doid_list: List):
@@ -142,18 +156,24 @@ if __name__ == "__main__":
     print("Running axiom-based matching...")
     df_result_axiom = doid2symp_by_axiom(doid_onto, doid_list)
     df_result_axiom = join_info(df_result_axiom, df_doid, df_symp)
-    df_result_axiom.to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_axiom.tsv", sep="\t", index=False)
+    df_result_axiom.to_csv(
+        f"{REPO_ROOT}/data/relationship/symp2doid_by_axiom.tsv", sep="\t", index=False
+    )
 
     # Run levenshtein-based matching
     print("Running levenshtein-based matching...")
     df_result_levenshtein = symp2doid_by_sentence(df_symp, df_doid, logic="levenshtein", topk=5)
     df_results_levenshtein = join_info(df_result_levenshtein, df_doid, df_symp)
-    df_results_levenshtein.to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_levenshtein.tsv", sep="\t", index=False)
+    df_results_levenshtein.to_csv(
+        f"{REPO_ROOT}/data/relationship/symp2doid_by_levenshtein.tsv", sep="\t", index=False
+    )
 
     # Run cosine-based matching
     print("Running cosine-based matching...")
     df_result_semantic = symp2doid_by_sentence(df_symp, df_doid, logic="cosine", topk=5)
     df_result_semantic = join_info(df_result_semantic, df_doid, df_symp)
-    df_result_semantic.to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_semantic.tsv", sep="\t", index=False)
+    df_result_semantic.to_csv(
+        f"{REPO_ROOT}/data/relationship/symp2doid_by_semantic.tsv", sep="\t", index=False
+    )
 
     print("complete!")
