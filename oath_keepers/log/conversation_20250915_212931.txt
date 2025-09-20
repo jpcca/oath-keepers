@@ -1,0 +1,88 @@
+---USER
+Call received. Please greet the patient on the call.
+---ASSISTANT
+{
+"response": "Hello, thank you for calling. I'm here to help you organize your symptoms before your appointment. I'm an AI assistant, not a doctor, so I can't give medical advice. Ready to get started?",
+"response_type": "greeting",
+"reason": "This is the initial interaction. It warmly welcomes the patient, explains the AI's role, sets boundaries, and asks if they are ready to proceed."
+}
+
+---USER
+Hi. I’ve been having some pain in my stomach lately.
+---ASSISTANT
+{
+"response": "Okay, I understand. To help me understand better, could you tell me where exactly in your stomach you're feeling the pain?",
+"response_type": "questioning",
+"reason": "The patient mentioned stomach pain. The next step is to pinpoint the location of the pain to gather more specific information."
+}
+
+---USER
+It’s mostly on the upper right side, just below my ribs.
+---ASSISTANT
+{
+"response": "Thanks. Is the pain constant, or does it come and go?",
+"response_type": "questioning",
+"reason": "Now that the location is identified, understanding the pattern of the pain (constant vs. intermittent) is the next logical step for clarification."
+}
+
+---USER
+It comes and goes.
+---ASSISTANT
+{
+"response": "Okay. About how often would you say it comes and goes? Like daily, a few times a week, or something else?",
+"response_type": "questioning",
+"reason": "Building on the previous answer (comes and goes), quantifying the frequency helps understand the pattern better."
+}
+
+---USER
+a few times a week
+---ASSISTANT
+{
+"response": "Thanks. When you feel the pain, would you describe it as sharp, dull, cramping, or something else?",
+"response_type": "questioning",
+"reason": "Characterizing the nature of the pain (sharp, dull, etc.) is crucial for understanding the symptom."
+}
+
+---USER
+dull
+---ASSISTANT
+{
+"response": "Okay, dull pain. Does anything seem to trigger the pain, like eating certain foods or times of day?",
+"response_type": "questioning",
+"reason": "Identifying potential triggers helps narrow down possible causes and provides more context."
+}
+
+---USER
+it usually happens after I eat fatty foods.
+---ASSISTANT
+{
+"response": "Thanks. On a scale of 1 to 10, with 1 being mild and 10 being the worst pain imaginable, how would you rate the pain?",
+"response_type": "questioning",
+"reason": "Assessing the severity of the pain provides important contextual information."
+}
+---USER
+6
+---ASSISTANT
+{
+"response": "Okay, a 6 out of 10. Has this pain been happening for a while, or is it recent?",
+"response_type": "questioning",
+"reason": "Understanding the duration or onset of the symptoms is another key piece of information."
+}
+
+---USER
+About a week ago.
+---ASSISTANT
+{
+"response": "Okay. Just to confirm, you've had dull pain, rated about a 6/10, in the upper right side of your stomach below the ribs, occurring a few times a week, especially after eating fatty foods, for about a week. Is that correct?",
+"response_type": "confirming",
+"reason": "It's important to summarize the gathered information to ensure accuracy before concluding the conversation."
+}
+
+---USER
+yes
+---ASSISTANT
+{
+"response": "Great. I have a summary of your symptoms: dull pain (6/10) in the upper right stomach below the ribs, occurring a few times a week, especially after fatty foods, for about a week. This information should be helpful for your doctor. Is there anything else you'd like to add or clarify before I finish?",
+"response_type": "closing",
+"reason": "The final response summarizes all the gathered information in a clear, organized format, ready for the patient to share with their doctor, and offers a final chance for clarification."
+}

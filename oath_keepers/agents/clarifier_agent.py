@@ -39,6 +39,15 @@ def get_filename():
     instruction=Path(f"{prompt_path}/clarifier_prompt.md").read_text(encoding="utf-8"),
     use_history=True,
 )
+
+# To run with MedGemma or other model via Ollama, comment out `@agents.custom` above and uncomment here
+# @agents.agent(
+#     name="clarifier_agent",
+#     instruction=Path(f"{prompt_path}/clarifier_prompt.md").read_text(encoding="utf-8"),
+#     model="generic.alibayram/medgemma:27b",  # or other models e.g. "generic.gemma3:12b"
+#     use_history=True,
+# )
+
 async def clarifier_assistant():
     async with agents.run() as agent:
         print("=== Medical Symptom Clarification Assistant ===")
