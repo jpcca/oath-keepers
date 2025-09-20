@@ -123,19 +123,12 @@ class CandidateResponse(BaseModel):
 
 
 # Extractor JSON schema models
-class Quality(str, Enum):
-    high = "high"
-    medium = "medium"
-    low = "low"
-
-
 class ClinicalFinding(BaseModel):
     """Single extracted clinical finding from a transcript."""
 
     location: Optional[str] = None
     symptom: str
     details: Optional[str] = None
-    quality: Quality
 
 
 class ExtractionResult(BaseModel):
