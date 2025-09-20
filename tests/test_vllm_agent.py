@@ -5,7 +5,9 @@ import pytest
 try:  # Skip cleanly if fast-agent-mcp is not installed
     from mcp_agent.core.fastagent import FastAgent  # type: ignore
 except Exception:  # pragma: no cover - unit env without heavy deps
-    pytest.skip("fast-agent-mcp not installed; skipping vLLM integration test", allow_module_level=True)
+    pytest.skip(
+        "fast-agent-mcp not installed; skipping vLLM integration test", allow_module_level=True
+    )
 
 try:
     from oath_keepers.vllm_client import LocalAgent
