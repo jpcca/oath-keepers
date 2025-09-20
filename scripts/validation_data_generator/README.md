@@ -3,6 +3,8 @@ install OpenJDK to install Java
 ```shell
 # follow the prompt after you install openjdk to export path
 brew install openjdk
+# maximum memory located to JVM
+export JVM_MAX_MEMORY=4g
 ```
 
 install python libraries

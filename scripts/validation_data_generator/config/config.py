@@ -1,9 +1,13 @@
 import subprocess
+import builtins
+import os
 
 REPO_ROOT = subprocess.run(
     ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True
 ).stdout.strip()
 
+# for JVM memory setting
+builtins.input = lambda _: os.environ.get("JVM_MAX_MEMORY", "4g")  
 
 # アノテーションプロパティの IRI
 class OwlIri:
@@ -15,3 +19,4 @@ class OwlIri:
     SYN_EXACT = "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"  # 同義語 (厳密)
     SYN_RELATED = "http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym"  # 関連語
     RO_SYMPTOM = "RO_0002452"  # this means `doid has_symptom symp` https://www.ebi.ac.uk/ols4/ontologies/ro/properties/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FRO_0002452
+

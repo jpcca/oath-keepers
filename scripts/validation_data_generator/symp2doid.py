@@ -8,6 +8,8 @@ from deeponto.onto import Ontology
 from org.semanticweb.owlapi.model import AxiomType, OWLObjectSomeValuesFrom
 from pandas import DataFrame
 from rapidfuzz.process import cdist
+from sentence_transformers import SentenceTransformer, util
+import argparse
 
 
 def doid2symp_by_axiom(doid_onto: Ontology, doid_list: List):
@@ -39,7 +41,7 @@ def doid2symp_by_axiom(doid_onto: Ontology, doid_list: List):
     return pd.DataFrame(result, columns=["doid_iri", "symptom_iri", "method", "score"])
 
 
-def symp2doid_by_keyword(df_symp: DataFrame, df_doid: DataFrame, topk=5):
+def symp2doid_by_sentence(df_symp: DataFrame, df_doid: DataFrame, logic: str, topk: int=5):
     """
     symp と doid の名前、定義、同義語を使ったキーワードベースのマッチング
     e.g.
@@ -49,6 +51,7 @@ def symp2doid_by_keyword(df_symp: DataFrame, df_doid: DataFrame, topk=5):
     Arguments:
         df_symp: DataFrame for SYMP.tsv
         df_doid: DataFrame for DOID.tsv
+        logic: "levenshtein" or "cosine"
         topk: Return top k results for each doid
     Returns:
         Dict of doid_iri -> List of tuples (symptom_iri, method)
@@ -61,45 +64,56 @@ def symp2doid_by_keyword(df_symp: DataFrame, df_doid: DataFrame, topk=5):
     def _join_keywords(row):
         return f"name={row['name']}:exact_synonym={row['exact_synonym']}:related_synonym={row['related_synonym']}:definition={row['definition']}"
 
-    _df_symp["keyword"] = (
+    _df_symp["sentence"] = (
         _df_symp[["name", "exact_synonym", "related_synonym", "definition"]]
         .apply(_join_keywords, axis=1)
         .str.lower()
     )
-    _df_doid["keyword"] = (
+    _df_doid["sentence"] = (
         _df_doid[["name", "exact_synonym", "related_synonym", "definition"]]
         .apply(_join_keywords, axis=1)
         .str.lower()
     )
 
-    queries = _df_symp["keyword"].tolist()
-    choices = _df_doid["keyword"].tolist()
+    symp_sentence = _df_symp["sentence"].tolist()
+    doid_sentence = _df_doid["sentence"].tolist()
+    rows = np.arange(len(_df_symp))[:, None]
 
-    scores = cdist(queries, choices, workers=-1)
-    topk_indices = np.argsort(scores, axis=1)[:, -topk:][:, ::-1]
-    rows = np.arange(scores.shape[0])[:, None]
-    topk_doid_iris = [
-        _df_doid.iloc[topk_index]["iri"].tolist() for topk_index in topk_indices
-    ]  # shape: (num_symptoms, topk)
-    topk_confidences = scores[rows, topk_indices].tolist()  # shape: (num_symptoms, topk)
+    def _get_topk(logic=logic, topk=topk):
+        if logic == "levenshtein":
+            scores = cdist(symp_sentence, doid_sentence, workers=-1) / 100
+        elif logic == "cosine":
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+            model = SentenceTransformer(model_name)
+            symp_embeddings = model.encode(symp_sentence, convert_to_tensor=True, show_progress_bar=True)
+            doid_embeddings = model.encode(doid_sentence, convert_to_tensor=True, show_progress_bar=True)
+            scores = util.cos_sim(symp_embeddings, doid_embeddings).cpu().numpy()
+        
+        topk_indices = np.argsort(-scores, axis=1)[:, :topk]
+        topk_doid_iris = [
+            _df_doid.iloc[topk_index]["iri"].tolist() for topk_index in topk_indices
+        ]  # shape: (num_symptoms, topk)
+        topk_scores = scores[rows, topk_indices].tolist()  # shape: (num_symptoms, topk)
+        
+        return (topk_doid_iris, topk_scores)
 
-    for symp_iri, topk_doid_iri, topk_confidence in zip(
-        _df_symp["iri"], topk_doid_iris, topk_confidences
+    topk_doid_iris, topk_scores = _get_topk(logic, topk)
+    for symp_iri, topk_doid_iri, topk_score in zip(
+        _df_symp["iri"], topk_doid_iris, topk_scores
     ):
-        for doid_iri, confidence in zip(topk_doid_iri, topk_confidence):
-            results.append([doid_iri, symp_iri, "keyword", confidence/100])
+        for doid_iri, confidence in zip(topk_doid_iri, topk_score):
+            results.append([doid_iri, symp_iri, logic, confidence])
 
     return pd.DataFrame(results, columns=["doid_iri", "symptom_iri", "method", "score"])
 
-
 if __name__ == "__main__":
-    # Run axiom-based matching
-    print("Running axiom-based matching...")
     doid_onto = Ontology(f"{REPO_ROOT}/data/owl/DOID.owl")
     df_symp = pd.read_table(f"{REPO_ROOT}/data/master/SYMP.tsv", sep="\t", header=0, dtype=str)
     df_doid = pd.read_table(f"{REPO_ROOT}/data/master/DOID.tsv", sep="\t", header=0, dtype=str)
     doid_list = df_doid["iri"].tolist()
 
+    # Run axiom-based matching
+    print("Running axiom-based matching...")
     df_results_axiom = doid2symp_by_axiom(doid_onto, doid_list)
     (
         df_results_axiom.set_index("doid_iri")
@@ -115,9 +129,9 @@ if __name__ == "__main__":
         .rename({"index": "symptom_iri"}, axis=1)
     ).to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_axiom.tsv", sep="\t", index=False)
 
-    # Run keyword-based matching
-    print("Running keyword-based matching...")
-    df_results_keyword = symp2doid_by_keyword(df_symp, df_doid, topk=5)
+    # Run levenshtein-based matching
+    print("Running levenshtein-based matching...")
+    df_results_keyword = symp2doid_by_sentence(df_symp, df_doid, logic="levenshtein", topk=5)
     (
         df_results_keyword.set_index("doid_iri")
         .join(df_doid.set_index("iri")["name"].rename("doid_name"))
@@ -131,5 +145,22 @@ if __name__ == "__main__":
         .reset_index()
         .rename({"index": "symptom_iri"}, axis=1)
     ).to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_keyword.tsv", sep="\t", index=False)
+
+    # Run cosine-based matching
+    print("Running cosine-based matching...")
+    df_results_semantic = symp2doid_by_sentence(df_symp, df_doid, logic="cosine", topk=5)
+    (
+        df_results_semantic.set_index("doid_iri")
+        .join(df_doid.set_index("iri")["name"].rename("doid_name"))
+        .reset_index()
+        .set_index("symptom_iri")
+        .join(
+            df_symp.set_index("iri")[["name", "definition"]].rename(
+                {"name": "symptom_name", "definition": "symptom_definition"}, axis=1
+            )
+        )
+        .reset_index()
+        .rename({"index": "symptom_iri"}, axis=1)
+    ).to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_semantic.tsv", sep="\t", index=False)
 
     print("complete!")
