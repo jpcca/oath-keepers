@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Annotated, Any, Optional, Sequence, Union
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -106,3 +107,38 @@ class GenerateRequest(BaseModel):
 
     prompts: str | Sequence[str]
     sampling_params: SamplingParams | Sequence[SamplingParams]
+
+
+class ResponseType(str, Enum):
+    greeting = "greeting"
+    questioning = "questioning"
+    confirming = "confirming"
+    closing = "closing"
+
+
+class CandidateResponse(BaseModel):
+    response: str
+    response_type: ResponseType
+    reason: str
+
+
+# Extractor JSON schema models
+class Quality(str, Enum):
+    high = "high"
+    medium = "medium"
+    low = "low"
+
+
+class ClinicalFinding(BaseModel):
+    """Single extracted clinical finding from a transcript."""
+
+    location: Optional[str] = None
+    symptom: str
+    details: Optional[str] = None
+    quality: Quality
+
+
+class ExtractionResult(BaseModel):
+    """Top-level structure returned by the extractor agent."""
+
+    findings: list[ClinicalFinding] = Field(default_factory=list)

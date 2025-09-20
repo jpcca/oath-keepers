@@ -1,31 +1,17 @@
 import asyncio
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 
 from mcp_agent.core.fastagent import FastAgent
 from mcp_agent.core.prompt import Prompt
-from pydantic import BaseModel
 
+from oath_keepers.utils.typing import CandidateResponse, ExtractionResult, ResponseType
 from oath_keepers.vllm_client import LocalAgent
 
 agents = FastAgent("medical-symptom-clarifier")
 base_path = Path(__file__).parent.parent
 log_path = f"{base_path}/log"
 prompt_path = f"{base_path}/prompts"
-
-
-class ResponseType(str, Enum):
-    greeting = "greeting"
-    questioning = "questioning"
-    confirming = "confirming"
-    closing = "closing"
-
-
-class CandidateResponse(BaseModel):
-    response: str
-    response_type: ResponseType
-    reason: str
 
 
 def get_filename():
