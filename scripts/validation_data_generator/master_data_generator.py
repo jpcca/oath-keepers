@@ -1,10 +1,12 @@
 import builtins
+import os
 
 from config.config import REPO_ROOT, OwlIri
-from deeponto.onto import Ontology
 
-# for JVM memory setting
+# for JVM memory setting, this must be set before importing Ontology
 builtins.input = lambda _: os.environ.get("JVM_MAX_MEMORY", "4g")
+
+from deeponto.onto import Ontology
 
 
 def get_ontology_info(onto: Ontology, iri: str):

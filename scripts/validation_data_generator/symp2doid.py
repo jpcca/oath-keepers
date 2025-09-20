@@ -1,5 +1,9 @@
 import builtins
+import os
 from typing import List
+
+# for JVM memory setting, this must be set before importing Ontology
+builtins.input = lambda _: os.environ.get("JVM_MAX_MEMORY", "4g")
 
 import numpy as np
 import pandas as pd
@@ -10,9 +14,6 @@ from org.semanticweb.owlapi.model import OWLObjectSomeValuesFrom
 from pandas import DataFrame
 from rapidfuzz.process import cdist
 from sentence_transformers import SentenceTransformer, util
-
-# for JVM memory setting
-builtins.input = lambda _: os.environ.get("JVM_MAX_MEMORY", "4g")
 
 
 def doid2symp_by_axiom(doid_onto: Ontology, doid_list: List):
@@ -133,6 +134,7 @@ if __name__ == "__main__":
         )
         .reset_index()
         .rename({"index": "symptom_iri"}, axis=1)
+        .sort_values(["doid_iri", "symptom_iri"])
     ).to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_axiom.tsv", sep="\t", index=False)
 
     # Run levenshtein-based matching
@@ -150,6 +152,7 @@ if __name__ == "__main__":
         )
         .reset_index()
         .rename({"index": "symptom_iri"}, axis=1)
+        .sort_values(["doid_iri", "symptom_iri"])
     ).to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_keyword.tsv", sep="\t", index=False)
 
     # Run cosine-based matching
@@ -167,6 +170,7 @@ if __name__ == "__main__":
         )
         .reset_index()
         .rename({"index": "symptom_iri"}, axis=1)
+        .sort_values(["doid_iri", "symptom_iri"])
     ).to_csv(f"{REPO_ROOT}/data/relationship/symp2doid_by_semantic.tsv", sep="\t", index=False)
 
     print("complete!")
