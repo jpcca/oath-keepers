@@ -1,0 +1,10 @@
+{
+  "findings": [
+    {
+      "location": "upper right abdomen",
+      "symptom": "dull pain",
+      "details": "rated 6/10, occurring a few times a week, especially after eating fatty foods, for about a week",
+      "quality": "high"
+    }
+  ]
+}
