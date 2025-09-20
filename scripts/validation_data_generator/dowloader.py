@@ -1,5 +1,6 @@
 import os
 
+import requests
 from config.config import REPO_ROOT
 
 if __name__ == "__main__":
@@ -15,7 +16,7 @@ if __name__ == "__main__":
         if os.path.exists(data_path):
             print(f"{name}.owl already exists. Redownload? [Y/n]: ", end="")
             if input().strip().lower() != "y":
-                print(f"Skipping.")
+                print("Skipping.")
                 continue
 
         print("Downloading", f"{name}.owl ... ", end="")

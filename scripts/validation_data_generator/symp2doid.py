@@ -1,3 +1,4 @@
+import builtins
 from typing import List
 
 import numpy as np
@@ -5,11 +6,13 @@ import pandas as pd
 import tqdm
 from config.config import REPO_ROOT, OwlIri
 from deeponto.onto import Ontology
-from org.semanticweb.owlapi.model import AxiomType, OWLObjectSomeValuesFrom
+from org.semanticweb.owlapi.model import OWLObjectSomeValuesFrom
 from pandas import DataFrame
 from rapidfuzz.process import cdist
 from sentence_transformers import SentenceTransformer, util
-import argparse
+
+# for JVM memory setting
+builtins.input = lambda _: os.environ.get("JVM_MAX_MEMORY", "4g")
 
 
 def doid2symp_by_axiom(doid_onto: Ontology, doid_list: List):
@@ -41,7 +44,7 @@ def doid2symp_by_axiom(doid_onto: Ontology, doid_list: List):
     return pd.DataFrame(result, columns=["doid_iri", "symptom_iri", "method", "score"])
 
 
-def symp2doid_by_sentence(df_symp: DataFrame, df_doid: DataFrame, logic: str, topk: int=5):
+def symp2doid_by_sentence(df_symp: DataFrame, df_doid: DataFrame, logic: str, topk: int = 5):
     """
     symp と doid の名前、定義、同義語を使ったキーワードベースのマッチング
     e.g.
@@ -83,28 +86,31 @@ def symp2doid_by_sentence(df_symp: DataFrame, df_doid: DataFrame, logic: str, to
         if logic == "levenshtein":
             scores = cdist(symp_sentence, doid_sentence, workers=-1) / 100
         elif logic == "cosine":
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
+            model_name = "sentence-transformers/all-MiniLM-L6-v2"
             model = SentenceTransformer(model_name)
-            symp_embeddings = model.encode(symp_sentence, convert_to_tensor=True, show_progress_bar=True)
-            doid_embeddings = model.encode(doid_sentence, convert_to_tensor=True, show_progress_bar=True)
+            symp_embeddings = model.encode(
+                symp_sentence, convert_to_tensor=True, show_progress_bar=True
+            )
+            doid_embeddings = model.encode(
+                doid_sentence, convert_to_tensor=True, show_progress_bar=True
+            )
             scores = util.cos_sim(symp_embeddings, doid_embeddings).cpu().numpy()
-        
+
         topk_indices = np.argsort(-scores, axis=1)[:, :topk]
         topk_doid_iris = [
             _df_doid.iloc[topk_index]["iri"].tolist() for topk_index in topk_indices
         ]  # shape: (num_symptoms, topk)
         topk_scores = scores[rows, topk_indices].tolist()  # shape: (num_symptoms, topk)
-        
+
         return (topk_doid_iris, topk_scores)
 
     topk_doid_iris, topk_scores = _get_topk(logic, topk)
-    for symp_iri, topk_doid_iri, topk_score in zip(
-        _df_symp["iri"], topk_doid_iris, topk_scores
-    ):
+    for symp_iri, topk_doid_iri, topk_score in zip(_df_symp["iri"], topk_doid_iris, topk_scores):
         for doid_iri, confidence in zip(topk_doid_iri, topk_score):
             results.append([doid_iri, symp_iri, logic, confidence])
 
     return pd.DataFrame(results, columns=["doid_iri", "symptom_iri", "method", "score"])
+
 
 if __name__ == "__main__":
     doid_onto = Ontology(f"{REPO_ROOT}/data/owl/DOID.owl")
