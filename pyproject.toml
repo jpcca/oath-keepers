@@ -1,6 +1,7 @@
 [project]
 dependencies = [
   "fast-agent-mcp>=0.2.58",
+  "whisperlivekit>=0.2.12",
 ]
 description = "Add your description here"
 name = "oath-keepers"
