@@ -98,7 +98,7 @@ jobs:
                     counter=$((counter+1))
                   done
 
-                  uv run pytest oath_keepers
+                  uv run pytest
 
             - name: Upload SHA-specific cache as backup
               if: github.ref == 'refs/heads/main'
