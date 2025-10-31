@@ -27,7 +27,6 @@ def get_filepath() -> Path:
 )
 async def clarifier_assistant() -> Path | None:
     conversation_log_path = get_filepath()
-
     async with agents.run() as agent:
         print("=== Medical Symptom Clarification Assistant ===")
         print(
