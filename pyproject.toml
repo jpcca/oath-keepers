@@ -1,7 +1,6 @@
 [project]
 dependencies = [
   "fast-agent-mcp>=0.2.49",
-  "whisperlivekit>=0.2.12",
 ]
 description = "Add your description here"
 name = "oath-keepers"
@@ -18,6 +17,7 @@ dev = [
   "ruff>=0.12.2",
 ]
 gpu = [
+  "whisperlivekit>=0.2.12",
   "vllm>=0.10.0",
 ]
 

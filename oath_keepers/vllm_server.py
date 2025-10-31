@@ -485,7 +485,7 @@ if __name__ == "__main__":
 
     llm = LLM(model=args.model)
 
-    args.model = "small"
+    args.model = "tiny"
     transcription_engine = TranscriptionEngine(
         **vars(args),
     )
