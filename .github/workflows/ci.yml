@@ -98,12 +98,7 @@ jobs:
                     counter=$((counter+1))
                   done
 
-                  uv run pytest --cov oath_keepers
-
-            - uses: codecov/codecov-action@v5
-              with:
-                  fail_ci_if_error: true
-                  token: ${{ secrets.CODECOV_TOKEN }}
+                  uv run pytest oath_keepers
 
             - name: Upload SHA-specific cache as backup
               if: github.ref == 'refs/heads/main'
