@@ -17,4 +17,4 @@ cd ..
 sudo rm -rf vllm_source
 
 # install whisperlivekit
-pip install --no-cache-dir whisperlivekit
+uv pip install --no-cache-dir whisperlivekit
