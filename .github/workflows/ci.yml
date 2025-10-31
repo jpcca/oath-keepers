@@ -40,18 +40,6 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - name: Environment cache
-              id: env-cache
-              uses: actions/cache/restore@v4
-              with:
-                  path: |
-                      /tmp/.uv-cache
-                      ./.venv
-                      ./.check.md5
-                  key: env-cache:main
-                  restore-keys: |
-                      env-cache:backup
-
             - name: Free up space on runners
               if: steps.env-cache.outputs.cache-hit != 'true'
               run: |
@@ -72,6 +60,18 @@ jobs:
               uses: astral-sh/setup-uv@v6
               with:
                   activate-environment: true
+
+            - name: Environment cache
+              id: env-cache
+              uses: actions/cache/restore@v4
+              with:
+                  path: |
+                      /tmp/.uv-cache
+                      ./.venv
+                      ./.check.md5
+                  key: env-cache:main
+                  restore-keys: |
+                      env-cache:backup
 
             - name: Install dependencies if needed
               run: |
