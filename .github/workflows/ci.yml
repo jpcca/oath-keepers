@@ -39,17 +39,6 @@ jobs:
             UV_CACHE_DIR: /tmp/.uv-cache
         steps:
             - uses: actions/checkout@v4
-
-            - name: Free up space on runners
-              if: steps.env-cache.outputs.cache-hit != 'true'
-              run: |
-                  sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/go /usr/local/lib/gradle /usr/local/lib/node /usr/local/lib/wine /usr/local/lib/xamarin /usr/local/lib/mono
-                  sudo apt-get update
-                  sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' \
-                    azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
-                  sudo apt-get -y autoremove
-                  sudo apt-get clean
-
             - name: "Set up Python"
               uses: actions/setup-python@v5
               with:
@@ -72,6 +61,16 @@ jobs:
                   key: env-cache:main
                   restore-keys: |
                       env-cache:backup
+
+            - name: Free up space on runners
+              if: steps.env-cache.outputs.cache-hit != 'true'
+              run: |
+                  sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/go /usr/local/lib/gradle /usr/local/lib/node /usr/local/lib/wine /usr/local/lib/xamarin /usr/local/lib/mono
+                  sudo apt-get update
+                  sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' \
+                    azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+                  sudo apt-get -y autoremove
+                  sudo apt-get clean
 
             - name: Install dependencies if needed
               run: |
