@@ -60,9 +60,9 @@ def get_ontology_info(onto: Ontology, iri: str):
 
 if __name__ == "__main__":
     # Ontology のロード
-    doid_onto = Ontology(f"{REPO_ROOT}/data/owl/DOID.owl")
-    symp_onto = Ontology(f"{REPO_ROOT}/data/owl/SYMP.owl")
-    fma_onto = Ontology(f"{REPO_ROOT}/data/owl/FMA.owl")
+    doid_onto = Ontology(f"{REPO_ROOT}/scripts/data/owl/DOID.owl")
+    symp_onto = Ontology(f"{REPO_ROOT}/scripts/data/owl/SYMP.owl")
+    fma_onto = Ontology(f"{REPO_ROOT}/scripts/data/owl/FMA.owl")
 
     # 必要な Ontology に絞る
     doid_list = [
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     # 出力
     for onto_name, master in [("DOID", doid_master), ("SYMP", symp_master), ("FMA", fma_master)]:
-        with open(f"{REPO_ROOT}/data/master/{onto_name}.tsv", "w") as fw:
+        with open(f"{REPO_ROOT}/scripts/data/master/{onto_name}.tsv", "w") as fw:
             fw.write("iri\tid\tname\texact_synonym\trelated_synonym\tdefinition\n")
             for iri, short_id, name, synonym_exact, synonym_related, definition in master:
                 fw.write(

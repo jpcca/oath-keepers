@@ -9,10 +9,10 @@ if __name__ == "__main__":
         "SYMP": "http://purl.obolibrary.org/obo/symp.owl",
         "FMA": "http://purl.obolibrary.org/obo/fma.owl",
     }
-    os.makedirs(f"{REPO_ROOT}/data/owl", exist_ok=True)
+    os.makedirs(f"{REPO_ROOT}/scripts/data/owl", exist_ok=True)
 
     for name, url in urls.items():
-        data_path = REPO_ROOT + f"/data/owl/{name}.owl"
+        data_path = REPO_ROOT + f"/scripts/data/owl/{name}.owl"
         if os.path.exists(data_path):
             print(f"{name}.owl already exists. Redownload? [Y/n]: ", end="")
             if input().strip().lower() != "y":

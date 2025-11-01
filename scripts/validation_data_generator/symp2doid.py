@@ -147,9 +147,13 @@ def symp2doid_by_sentence(df_symp: DataFrame, df_doid: DataFrame, logic: str, to
 
 
 if __name__ == "__main__":
-    doid_onto = Ontology(f"{REPO_ROOT}/data/owl/DOID.owl")
-    df_symp = pd.read_table(f"{REPO_ROOT}/data/master/SYMP.tsv", sep="\t", header=0, dtype=str)
-    df_doid = pd.read_table(f"{REPO_ROOT}/data/master/DOID.tsv", sep="\t", header=0, dtype=str)
+    doid_onto = Ontology(f"{REPO_ROOT}/scripts/data/owl/DOID.owl")
+    df_symp = pd.read_table(
+        f"{REPO_ROOT}/scripts/data/master/SYMP.tsv", sep="\t", header=0, dtype=str
+    )
+    df_doid = pd.read_table(
+        f"{REPO_ROOT}/scripts/data/master/DOID.tsv", sep="\t", header=0, dtype=str
+    )
     doid_list = df_doid["iri"].tolist()
 
     # Run axiom-based matching
@@ -157,7 +161,7 @@ if __name__ == "__main__":
     df_result_axiom = doid2symp_by_axiom(doid_onto, doid_list)
     df_result_axiom = join_info(df_result_axiom, df_doid, df_symp)
     df_result_axiom.to_csv(
-        f"{REPO_ROOT}/data/relationship/symp2doid_by_axiom.tsv", sep="\t", index=False
+        f"{REPO_ROOT}/scripts/data/relationship/symp2doid_by_axiom.tsv", sep="\t", index=False
     )
 
     # Run levenshtein-based matching
@@ -165,7 +169,7 @@ if __name__ == "__main__":
     df_result_levenshtein = symp2doid_by_sentence(df_symp, df_doid, logic="levenshtein", topk=5)
     df_results_levenshtein = join_info(df_result_levenshtein, df_doid, df_symp)
     df_results_levenshtein.to_csv(
-        f"{REPO_ROOT}/data/relationship/symp2doid_by_levenshtein.tsv", sep="\t", index=False
+        f"{REPO_ROOT}/scripts/data/relationship/symp2doid_by_levenshtein.tsv", sep="\t", index=False
     )
 
     # Run cosine-based matching
@@ -173,7 +177,7 @@ if __name__ == "__main__":
     df_result_semantic = symp2doid_by_sentence(df_symp, df_doid, logic="cosine", topk=5)
     df_result_semantic = join_info(df_result_semantic, df_doid, df_symp)
     df_result_semantic.to_csv(
-        f"{REPO_ROOT}/data/relationship/symp2doid_by_semantic.tsv", sep="\t", index=False
+        f"{REPO_ROOT}/scripts/data/relationship/symp2doid_by_semantic.tsv", sep="\t", index=False
     )
 
     print("complete!")
