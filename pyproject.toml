@@ -15,19 +15,19 @@ version = "0.1.0"
 
 [project.optional-dependencies]
 cpu = [] # installed using cpu.sh
+gpu = [
+  "whisperlivekit>=0.2.12",
+  "vllm>=0.10.0",
+]
 dev = [
   "debugpy>=1.8.15",
   "pytest>=8.4.1",
   "ruff>=0.12.2",
 ]
-gpu = [
-  "whisperlivekit>=0.2.12; python_version < '3.13'",
-  "vllm>=0.10.0; python_version < '3.13'",
-]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 ignore = ["E501", "E402"]
@@ -44,5 +44,29 @@ select = [
 
 [dependency-groups]
 dev = [
-    "ruff>=0.12.8",
+    "ruff>=0.12.2",
 ]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu128", extra = "gpu" },
+]
+torchvision = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu128", extra = "gpu" },
+]
+tourchaudio = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu128", extra = "gpu" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
