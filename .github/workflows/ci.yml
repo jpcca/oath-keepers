@@ -37,7 +37,7 @@ jobs:
             contents: read
         env:
             UV_CACHE_DIR: /tmp/.uv-cache
-            UV_INDEX: https://download.pytorch.org/whl/cpu
+            UV_EXTRA_INDEX_URL: https://download.pytorch.org/whl/cpu
         steps:
             - uses: actions/checkout@v4
             - name: "Set up Python"
@@ -78,7 +78,7 @@ jobs:
               run: |
                   if ! md5sum --status --check .check.md5; then
                     uv run bash cpu.sh
-                    uv pip install .[cpu,dev]
+                    uv pip install --no-deps .[cpu,dev]
                     md5sum uv.lock pyproject.toml .python-version uv.lock cpu.sh > .check.md5
                   else
                     echo "Requirements unchanged"
