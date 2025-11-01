@@ -78,7 +78,7 @@ jobs:
               run: |
                   if ! md5sum --status --check .check.md5; then
                     uv run bash cpu.sh
-                    uv pip install --no-deps .[cpu,dev]
+                    uv pip install --index-strategy unsafe-best-match .[cpu,dev]
                     md5sum uv.lock pyproject.toml .python-version uv.lock cpu.sh > .check.md5
                   else
                     echo "Requirements unchanged"
