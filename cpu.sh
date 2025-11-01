@@ -15,6 +15,3 @@ cd ..
 
 # clean up
 sudo rm -rf vllm_source
-
-# install whisperlivekit
-uv pip install --no-cache-dir whisperlivekit
