@@ -1,27 +1,29 @@
+[tool.setuptools]
+packages = ["oath_keepers"]
+
 [project]
 dependencies = [
   "deeponto>=0.9.3",
-  "fast-agent-mcp>=0.2.35",
   "matplotlib>=3.10.6",
   "rapidfuzz>=3.14.1",
   "sentence-transformers>=5.1.0",
-  "fast-agent-mcp>=0.2.58",
+  "fast-agent-mcp>=0.2.49",
 ]
 description = "Add your description here"
 name = "oath-keepers"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 version = "0.1.0"
 
 [project.optional-dependencies]
-cpu = [] # installed using vllm-cpu.sh
+cpu = [] # installed using cpu.sh
 dev = [
   "debugpy>=1.8.15",
   "pytest>=8.4.1",
-  "pytest-cov>=6.2.1",
   "ruff>=0.12.2",
 ]
 gpu = [
+  "whisperlivekit>=0.2.12",
   "vllm>=0.10.0",
 ]
 

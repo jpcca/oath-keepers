@@ -13,3 +13,6 @@ wheels/
 .*
 !.gitignore
 !.github
+
+# weight files
+*.pt
