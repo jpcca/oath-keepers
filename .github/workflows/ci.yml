@@ -80,8 +80,7 @@ jobs:
                     uv pip install .[cpu,dev]
                     md5sum uv.lock pyproject.toml .python-version uv.lock cpu.sh > .check.md5
                   else
-                    echo "Requirements unchanged, syncing environment"
-                    uv sync --extra cpu --extra dev
+                    echo "Requirements unchanged"
                   fi
 
             - name: Run tests
