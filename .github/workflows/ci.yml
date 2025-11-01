@@ -37,6 +37,7 @@ jobs:
             contents: read
         env:
             UV_CACHE_DIR: /tmp/.uv-cache
+            UV_INDEX: https://download.pytorch.org/whl/cpu
         steps:
             - uses: actions/checkout@v4
             - name: "Set up Python"
