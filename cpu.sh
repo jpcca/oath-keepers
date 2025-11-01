@@ -15,4 +15,7 @@ VLLM_TARGET_DEVICE=cpu uv pip install . --no-build-isolation
 cd ..
 
 # clean up
-sudo rm -rf vllm_source
+rm -rf vllm_source
+
+# install whisperlivekit
+uv pip install --no-cache-dir whisperlivekit
