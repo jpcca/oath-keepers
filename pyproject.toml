@@ -6,6 +6,7 @@ dependencies = [
   "deeponto>=0.9.3",
   "matplotlib>=3.10.6",
   "fast-agent-mcp>=0.2.49",
+  "whisperlivekit>=0.2.12",
 ]
 description = "Add your description here"
 name = "oath-keepers"
@@ -14,15 +15,30 @@ requires-python = ">=3.12"
 version = "0.1.0"
 
 [project.optional-dependencies]
-cpu = [] # installed using cpu.sh
+cpu = [
+  "torch>=2.8.0",
+  "torchaudio>=2.8.0",
+  "torchvision>=0.23.0",
+  # vllm installed with cpu.sh
+]
 gpu = [
-  "whisperlivekit>=0.2.12",
+  "torch>=2.8.0",
+  "torchaudio>=2.8.0",
+  "torchvision>=0.23.0",
   "vllm>=0.10.0",
 ]
 dev = [
   "debugpy>=1.8.15",
   "pytest>=8.4.1",
   "ruff>=0.12.2",
+]
+
+[tool.uv]
+conflicts = [
+  [
+    { extra = "cpu" },
+    { extra = "gpu" },
+  ],
 ]
 
 [tool.ruff]
