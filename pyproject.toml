@@ -21,8 +21,8 @@ dev = [
   "ruff>=0.12.2",
 ]
 gpu = [
-  "whisperlivekit>=0.2.12",
-  "vllm>=0.10.0",
+  "whisperlivekit>=0.2.12; python_version < '3.13'",
+  "vllm>=0.10.0; python_version < '3.13'",
 ]
 
 [tool.ruff]
