@@ -75,9 +75,14 @@ jobs:
 
             - name: Install dependencies if needed
               run: |
-                  uv run bash cpu.sh
-                  uv pip install .[cpu,dev]
-                  md5sum uv.lock pyproject.toml .python-version uv.lock cpu.sh > .check.md5
+                  if ! md5sum --status --check .check.md5; then
+                    uv run bash cpu.sh
+                    uv pip install .[cpu,dev]
+                    md5sum uv.lock pyproject.toml .python-version uv.lock cpu.sh > .check.md5
+                  else
+                    echo "Requirements unchanged, syncing environment"
+                    uv sync --extra cpu --extra dev
+                  fi
 
             - name: Run tests
               run: |
