@@ -59,7 +59,7 @@ jobs:
                       /tmp/.uv-cache
                       ./.venv
                       ./.check.md5
-                  key: env-cache:main:${{ hashFiles('.python-version') }}
+                  key: env-cache:main
                   restore-keys: |
                       env-cache:backup
 
