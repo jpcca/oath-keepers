@@ -39,17 +39,6 @@ jobs:
             UV_CACHE_DIR: /tmp/.uv-cache
         steps:
             - uses: actions/checkout@v4
-            - name: "Set up Python"
-              uses: actions/setup-python@v5
-              with:
-                  python-version-file: ".python-version"
-
-            - name: Setup uv
-              id: setup-uv
-              uses: astral-sh/setup-uv@v6
-              with:
-                  activate-environment: true
-                  prune-cache: false
 
             - name: Environment cache
               id: env-cache
@@ -73,12 +62,23 @@ jobs:
                   sudo apt-get -y autoremove
                   sudo apt-get clean
 
+            - name: "Set up Python"
+              uses: actions/setup-python@v5
+              with:
+                  python-version-file: ".python-version"
+
+            - name: Setup uv
+              id: setup-uv
+              uses: astral-sh/setup-uv@v6
+              with:
+                  activate-environment: true
+
             - name: Install dependencies if needed
               run: |
                   if ! md5sum --status --check .check.md5; then
-                    uv run bash cpu.sh
+                    uv run bash vllm-cpu.sh
                     uv pip install .[cpu,dev]
-                    md5sum uv.lock pyproject.toml .python-version uv.lock cpu.sh > .check.md5
+                    md5sum uv.lock pyproject.toml .python-version uv.lock vllm-cpu.sh > .check.md5
                   else
                     echo "Requirements unchanged"
                   fi
@@ -98,7 +98,12 @@ jobs:
                     counter=$((counter+1))
                   done
 
-                  uv run pytest
+                  uv run pytest --cov oath_keepers
+
+            - uses: codecov/codecov-action@v5
+              with:
+                  fail_ci_if_error: true
+                  token: ${{ secrets.CODECOV_TOKEN }}
 
             - name: Upload SHA-specific cache as backup
               if: github.ref == 'refs/heads/main'
@@ -133,6 +138,3 @@ jobs:
               run: gh cache delete env-cache:backup:${GITHUB_SHA}
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Minimize uv cache
-              run: uv cache prune --ci --force

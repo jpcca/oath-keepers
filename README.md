@@ -17,7 +17,7 @@ uv pip install -e .[gpu,dev]
 For cpu-only builds, which are used for GitHub actions
 
 ```bash
-uv run bash cpu.sh
+uv run bash vllm-cpu.sh
 uv pip install -e .[cpu,dev]
 ```
 
@@ -30,7 +30,7 @@ uv.lock
 pyproject.toml
 .python-version
 uv.lock
-cpu.sh
+vllm-cpu.sh
 ```
 
 Check `.github/workflows/ci.yml` to see implementation details.

@@ -1,22 +1,22 @@
 [project]
 dependencies = [
-  "fast-agent-mcp>=0.2.49",
+  "fast-agent-mcp>=0.2.58",
 ]
 description = "Add your description here"
 name = "oath-keepers"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 version = "0.1.0"
 
 [project.optional-dependencies]
-cpu = [] # installed using cpu.sh
+cpu = [] # installed using vllm-cpu.sh
 dev = [
   "debugpy>=1.8.15",
   "pytest>=8.4.1",
+  "pytest-cov>=6.2.1",
   "ruff>=0.12.2",
 ]
 gpu = [
-  "whisperlivekit>=0.2.12",
   "vllm>=0.10.0",
 ]
 
