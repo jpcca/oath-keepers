@@ -41,7 +41,7 @@ class vLLM(AugmentedLLM):
     vLLM interface for the fast-agent library.
     """
 
-    base_url = "http://localhost:8000"
+    base_url = "http://localhost:8081"
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, provider=Provider.GENERIC, **kwargs)
