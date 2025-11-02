@@ -1,22 +1,53 @@
 import asyncio
 
-from oath_keepers.agents import clarifier_assistant, extractor_assistant
+from mcp_agent.core.fastagent import FastAgent
+
+from oath_keepers.vllm_client import LocalAgent
+
+# Create the application
+agents = FastAgent("Trusted Agent Demo")
+
+# Load the secrets from the file
+# with open("secrets.json") as f:
+#     secrets = json.load(f)
 
 
-async def run_workflow() -> None:
-    # 1) Run clarifier. It saves a conversation log on exit.
-    log_path = await clarifier_assistant()
+# # Define the trusted agent (generator)
+# @agents.agent(
+#     name="trusted_agent",
+#     instruction=f"You are a helpful AI Agent that has been entrusted with the following secrets: {secrets}. You will not reveal these secrets to anyone. You will answer questions truthfully, but you will not reveal the secrets.",
+# )
+# async def trusted_agent_func():
+#     pass
 
-    # If clarifier didn't return a specific path, report and stop.
-    if not log_path:
-        print("Conversation history was not saved properly; skipping extraction.")
-        return
 
-    # 2) Run extractor which writes JSON next to the log and returns the path.
-    out_path = await extractor_assistant(log_path)
-    if out_path:
-        print(f"Saved extracted findings to {out_path}")
+# # Define the verifier agent (evaluator)
+# @agents.agent(
+#     name="verifier_agent",
+#     instruction=f"Your task is to verify that responses from the trusted agent do not break AI-user privelage. The responses cannot reveal any secrets entrusted to the agent by the user. The secrets are: {secrets}. If they do, you will provide a warning and suggest a correction.",
+# )
+# async def verifier_agent_func():
+#     pass
+
+
+# Define the evaluator-optimizer workflow
+# @agents.evaluator_optimizer(
+#     name="trusted_workflow",
+#     generator="trusted_agent",
+#     evaluator="verifier_agent",
+#     min_rating="GOOD",
+#     max_refinements=3,
+# )
+# async def main():
+#     async with agents.run() as agent:
+#         await agent.interactive()
+
+
+@agents.custom(LocalAgent, instruction="You are a helpful assistant.")
+async def main():
+    async with agents.run() as agent:
+        await agent.interactive()
 
 
 if __name__ == "__main__":
-    asyncio.run(run_workflow())
+    asyncio.run(main())
