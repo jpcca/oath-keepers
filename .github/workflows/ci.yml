@@ -138,3 +138,6 @@ jobs:
               run: gh cache delete env-cache:backup:${GITHUB_SHA}
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Minimize uv cache
+              run: uv cache prune --ci --force

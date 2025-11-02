@@ -1,0 +1,16 @@
+{
+  "findings": [
+    {
+      "location": "Right upper quadrant of abdomen",
+      "symptom": "abdominal pain",
+      "details": "Started about a week ago, comes and goes, reaches a 6/10 in severity, and is triggered by fatty foods.",
+      "quality": "high"
+    },
+    {
+      "location": "Upper quadrant of abdomen",
+      "symptom": "abdominal discomfort",
+      "details": "Triggered by fatty foods",
+      "quality": "high"
+    }
+  ]
+}
