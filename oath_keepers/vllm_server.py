@@ -263,7 +263,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    dtype = None
+    dtype = "auto"
 
     # CPU with structured outputs requires float32 for xgrammar library
     if not torch.cuda.is_available():
