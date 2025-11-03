@@ -56,7 +56,6 @@ jobs:
               uses: actions/cache/restore@v4
               with:
                   path: |
-                      /var/cache/apt/archives
                       /tmp/.uv-cache
                       ./.venv
                       ./.check.md5
