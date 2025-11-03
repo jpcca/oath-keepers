@@ -79,15 +79,18 @@ async def handle_websocket_results(websocket, results_generator):
 
     try:
         async for response in results_generator:
-            await websocket.send_json(response.to_dict())
+            # Store the dict to avoid calling to_dict() twice
+            response_dict = response.to_dict()
+            await websocket.send_json(response_dict)
 
             # Extract text from the transcription response
-            response_dict = response.to_dict()
             text = response_dict.get("text", "")
 
             if text:
-                # Add to buffer
-                transcription_buffer += text + " "
+                # Add to buffer with proper spacing
+                if transcription_buffer and not transcription_buffer.endswith(" "):
+                    transcription_buffer += " "
+                transcription_buffer += text
                 transcription_buffer = transcription_buffer.strip()
 
                 logger.info(f"Transcription buffer: {transcription_buffer}")

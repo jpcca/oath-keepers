@@ -1,6 +1,9 @@
 import pytest
 
 
+# Note: We duplicate is_complete_sentence here instead of importing from
+# oath_keepers.vllm_server to avoid heavy dependencies (torch, vllm, etc.)
+# that are not needed for unit testing the sentence completion logic.
 def is_complete_sentence(text: str) -> bool:
     """Check if the text ends with sentence-ending punctuation."""
     text = text.strip()
