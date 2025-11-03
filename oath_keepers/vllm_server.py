@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import logging
 
+import torch
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -107,8 +108,8 @@ async def generate(request: GenerateRequest) -> ChatCompletion:
     for key, value in request.sampling_params.model_dump().items():
         setattr(sampling_params, key, value)
 
-    if request.sampling_params.guided_decoding:
-        sampling_params.guided_decoding = request.sampling_params.guided_decoding
+    if request.sampling_params.structured_outputs:
+        sampling_params.structured_outputs = request.sampling_params.structured_outputs
 
     response = llm.generate(
         f"""
@@ -262,8 +263,13 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
+    dtype = "auto"
 
-    llm = LLM(model=args.model)
+    # CPU with structured outputs requires float32 for xgrammar library
+    if not torch.cuda.is_available():
+        dtype = "float32"
+
+    llm = LLM(model=args.model, dtype=dtype)
 
     args.model = "tiny"  # always use the same model for transcription engine
     transcription_engine = TranscriptionEngine(
