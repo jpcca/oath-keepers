@@ -33,7 +33,7 @@ from openai.types.chat import (
 )
 from pydantic_core import from_json
 
-from oath_keepers.utils.typing import GenerateRequest, GuidedDecodingParams, SamplingParams
+from oath_keepers.utils.typing import GenerateRequest, SamplingParams, StructuredOutputsParams
 
 
 class vLLM(AugmentedLLM):
@@ -98,7 +98,7 @@ class vLLM(AugmentedLLM):
         request_params = self.get_request_params(request_params=request_params)
         sampling_params = SamplingParams(max_tokens=request_params.maxTokens)
         if request_params.response_format is not None:
-            sampling_params.guided_decoding = GuidedDecodingParams.from_optional(
+            sampling_params.structured_outputs = StructuredOutputsParams.from_optional(
                 json=request_params.response_format
             )
 

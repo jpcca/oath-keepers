@@ -107,8 +107,8 @@ async def generate(request: GenerateRequest) -> ChatCompletion:
     for key, value in request.sampling_params.model_dump().items():
         setattr(sampling_params, key, value)
 
-    if request.sampling_params.guided_decoding:
-        sampling_params.guided_decoding = request.sampling_params.guided_decoding
+    if request.sampling_params.structured_outputs:
+        sampling_params.structured_outputs = request.sampling_params.structured_outputs
 
     response = llm.generate(
         f"""
