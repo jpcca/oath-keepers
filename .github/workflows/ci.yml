@@ -56,6 +56,7 @@ jobs:
               uses: actions/cache/restore@v4
               with:
                   path: |
+                      /var/cache/apt/archives
                       /tmp/.uv-cache
                       ./.venv
                       ./.check.md5
@@ -78,7 +79,7 @@ jobs:
                   if ! md5sum --status --check .check.md5; then
                     uv run bash cpu.sh
                     uv pip install .[cpu,dev]
-                    md5sum uv.lock pyproject.toml .python-version uv.lock cpu.sh > .check.md5
+                    md5sum pyproject.toml .python-version cpu.sh > .check.md5
                   else
                     echo "Requirements unchanged"
                   fi
