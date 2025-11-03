@@ -39,11 +39,76 @@ async def get():
     return HTMLResponse(get_inline_ui_html())
 
 
+async def prompt_llm_with_text(text: str):
+    """Send text to the LLM and print the response to terminal."""
+    try:
+        sampling_params = llm.get_default_sampling_params()
+        sampling_params.max_tokens = 256
+
+        response = llm.generate(
+            f"""
+                <start_of_turn>user
+                {text}<end_of_turn>
+                <start_of_turn>model
+            """,
+            sampling_params=sampling_params,
+            use_tqdm=False,
+        )[0]
+
+        if response.outputs:
+            llm_response_text = response.outputs[0].text
+            logger.info(f"LLM Response: {llm_response_text}")
+            print(f"\n[LLM Response]: {llm_response_text}\n")
+            return llm_response_text
+    except Exception as e:
+        logger.error(f"Error prompting LLM: {e}")
+        return None
+
+
+def is_complete_sentence(text: str) -> bool:
+    """Check if the text ends with sentence-ending punctuation."""
+    text = text.strip()
+    if not text:
+        return False
+    return text[-1] in ".!?"
+
+
 async def handle_websocket_results(websocket, results_generator):
     """Consumes results from the audio processor and sends them via WebSocket."""
+    transcription_buffer = ""
+
     try:
         async for response in results_generator:
             await websocket.send_json(response.to_dict())
+
+            # Extract text from the transcription response
+            response_dict = response.to_dict()
+            text = response_dict.get("text", "")
+
+            if text:
+                # Add to buffer
+                transcription_buffer += text + " "
+                transcription_buffer = transcription_buffer.strip()
+
+                logger.info(f"Transcription buffer: {transcription_buffer}")
+
+                # Check if we have a complete sentence
+                if is_complete_sentence(transcription_buffer):
+                    logger.info(f"Complete sentence detected: {transcription_buffer}")
+                    print(f"\n[Transcription]: {transcription_buffer}\n")
+
+                    # Prompt the LLM with the complete sentence
+                    await prompt_llm_with_text(transcription_buffer)
+
+                    # Clear the buffer
+                    transcription_buffer = ""
+
+        # Handle any remaining text in buffer when stream ends
+        if transcription_buffer.strip():
+            logger.info(f"Processing remaining buffer: {transcription_buffer}")
+            print(f"\n[Transcription]: {transcription_buffer}\n")
+            await prompt_llm_with_text(transcription_buffer)
+
         # when the results_generator finishes it means all audio has been processed
         logger.info("Results generator finished. Sending 'ready_to_stop' to client.")
         await websocket.send_json({"type": "ready_to_stop"})
