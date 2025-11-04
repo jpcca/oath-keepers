@@ -26,10 +26,8 @@ uv pip install -e .[cpu,dev]
 Changes in the following files rebuilds the cache used for running unit tests in GitHub actions.
 
 ```
-uv.lock
 pyproject.toml
 .python-version
-uv.lock
 cpu.sh
 ```
 
