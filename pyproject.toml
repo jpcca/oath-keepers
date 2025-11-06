@@ -1,6 +1,9 @@
 [project]
 dependencies = [
   "fast-agent-mcp>=0.2.49",
+  "numpy",
+  "librosa",
+  "sounddevice",
 ]
 description = "Add your description here"
 name = "oath-keepers"
