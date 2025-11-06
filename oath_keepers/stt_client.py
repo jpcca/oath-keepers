@@ -133,7 +133,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--source",
         type=str,
-        default="./assets/jfk.flac",
+        default="./oath_keepers/assets/jfk.flac",
         help="Audio file path or 'mic' for microphone",
     )
     parser.add_argument("--host", type=str, default="localhost")
