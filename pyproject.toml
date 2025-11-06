@@ -18,7 +18,6 @@ cpu = [
   "torchvision>=0.23.0",
   "whisperlivekit>=0.2.12",
   # vllm installed with cpu.sh
-  "librosa",
 ]
 gpu = [
   "torch>=2.8.0",
@@ -26,7 +25,6 @@ gpu = [
   "torchvision>=0.23.0",
   "whisperlivekit>=0.2.12",
   "vllm>=0.10.0",
-  "librosa",
 ]
 dev = [
   "debugpy>=1.8.15",
