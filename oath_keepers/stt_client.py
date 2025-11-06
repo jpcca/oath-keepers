@@ -1,13 +1,14 @@
+import argparse
 import asyncio
-import websockets
-import numpy as np
-import librosa
-import sounddevice as sd
 import json
+import logging
 import time
 from pathlib import Path
-import logging
-import argparse
+
+import librosa
+import numpy as np
+import sounddevice as sd
+import websockets
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -39,10 +40,11 @@ async def send_audio(websocket, source, chunk_size_s=1.0, sample_rate=16000, sim
         duration = len(audio) / sr
         chunk_size = int(sr * chunk_size_s)
         logger.info(
-            f"Streaming {path.name} ({duration:.2f}s, sr={sr}, chunk={chunk_size_s:.2f}s){' [Simu-RT]' if simu_realtime else ''}")
+            f"Streaming {path.name} ({duration:.2f}s, sr={sr}, chunk={chunk_size_s:.2f}s){' [Simu-RT]' if simu_realtime else ''}"
+        )
 
         for i in range(0, len(audio), chunk_size):
-            chunk = audio[i:i + chunk_size]
+            chunk = audio[i : i + chunk_size]
             if len(chunk) == 0:
                 continue
             await _send_chunk(websocket, chunk, sr)
@@ -67,16 +69,20 @@ async def receive_updates(websocket, first_token_event):
             resp = json.loads(msg)
             if "lines" in resp and len(resp["lines"]) > 0:
                 for line in resp["lines"]:
-                    print("\r{start} - {end} Speaker {speaker}: {text}".format(**line), end="", flush=True)
+                    print(
+                        "\r{start} - {end} Speaker {speaker}: {text}".format(**line),
+                        end="",
+                        flush=True,
+                    )
                     if not first_token_event.is_set():
                         first_token_event.set()
             for k, v in resp.items():
                 if k != "lines":
                     pass
-                    if k == 'type':
+                    if k == "type":
                         print(f"\n{k}: {v}")
 
-            if 'type' in resp and resp['type'] == 'ready_to_stop':
+            if "type" in resp and resp["type"] == "ready_to_stop":
                 break
 
         except websockets.exceptions.ConnectionClosedOK:
@@ -96,7 +102,9 @@ async def test_server(source, host="localhost", port=8000, chunk_size=1.0, simu_
         recv_task = asyncio.create_task(receive_updates(ws, first_token_event))
 
         start_time = time.time()
-        duration = await send_audio(ws, source, chunk_size_s=chunk_size, simu_realtime=simu_realtime)
+        duration = await send_audio(
+            ws, source, chunk_size_s=chunk_size, simu_realtime=simu_realtime
+        )
 
         try:
             await asyncio.wait_for(first_token_event.wait(), timeout=30)
@@ -109,7 +117,9 @@ async def test_server(source, host="localhost", port=8000, chunk_size=1.0, simu_
         rtf = total_time / duration if duration else None
 
         print("\n========== METRICS ==========")
-        print(f"First Token Latency: {first_latency:.3f}s" if first_latency else "No token received")
+        print(
+            f"First Token Latency: {first_latency:.3f}s" if first_latency else "No token received"
+        )
         print(f"Total Time: {total_time:.3f}s")
         print(f"Real Time Factor: {rtf:.3f}" if rtf else "RTF: undefined (mic input)")
         print("=============================\n")
@@ -118,21 +128,30 @@ async def test_server(source, host="localhost", port=8000, chunk_size=1.0, simu_
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="ASR Streaming Client, you should start the Server \
-            with pcm-input: whisperlivekit-server  --pcm-input")
-    parser.add_argument("--source", type=str, default='./assets/jfk.flac',
-                        help="Audio file path or 'mic' for microphone")
+            with pcm-input: whisperlivekit-server  --pcm-input"
+    )
+    parser.add_argument(
+        "--source",
+        type=str,
+        default="./assets/jfk.flac",
+        help="Audio file path or 'mic' for microphone",
+    )
     parser.add_argument("--host", type=str, default="localhost")
     parser.add_argument("--port", type=int, default=8000)
-    parser.add_argument("--chunk_size", type=float, default=1.0,
-                        help="Chunk size in seconds (default: 1.0)")
-    parser.add_argument("--simu_realtime", action="store_true",
-                        help="Simulate real-time file streaming")
+    parser.add_argument(
+        "--chunk_size", type=float, default=1.0, help="Chunk size in seconds (default: 1.0)"
+    )
+    parser.add_argument(
+        "--simu_realtime", action="store_true", help="Simulate real-time file streaming"
+    )
     args = parser.parse_args()
 
-    asyncio.run(test_server(
-        source=args.source,
-        host=args.host,
-        port=args.port,
-        chunk_size=args.chunk_size,
-        simu_realtime=args.simu_realtime
-    ))
+    asyncio.run(
+        test_server(
+            source=args.source,
+            host=args.host,
+            port=args.port,
+            chunk_size=args.chunk_size,
+            simu_realtime=args.simu_realtime,
+        )
+    )
