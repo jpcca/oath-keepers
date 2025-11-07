@@ -43,10 +43,8 @@ Access the web interface at `http://localhost:8000` to start speaking into your 
 Changes in the following files rebuilds the cache used for running unit tests in GitHub actions.
 
 ```
-uv.lock
 pyproject.toml
 .python-version
-uv.lock
 cpu.sh
 ```
 

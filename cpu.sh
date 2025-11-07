@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # install system dependencies
+sudo apt-get update
 sudo apt-get install -y --no-install-recommends gcc-12 g++-12 libnuma-dev python3-dev ffmpeg
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 10 --slave /usr/bin/g++ g++ /usr/bin/g++-12
 
