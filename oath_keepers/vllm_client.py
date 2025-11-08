@@ -34,14 +34,14 @@ from openai.types.chat import (
 from pydantic_core import from_json
 
 from oath_keepers.utils.typing import GenerateRequest, SamplingParams, StructuredOutputsParams
+import os
 
 
 class vLLM(AugmentedLLM):
     """
     vLLM interface for the fast-agent library.
     """
-
-    base_url = "http://localhost:8000"
+    base_url = f"http://localhost:{os.getenv('PORT', '8000')}"
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, provider=Provider.GENERIC, **kwargs)

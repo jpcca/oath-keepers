@@ -4,6 +4,7 @@ import logging
 
 import torch
 import uvicorn
+import os
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -158,7 +159,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--host", type=str, default="localhost")
-    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--port", type=int, default=int(os.getenv('PORT', '8000')))
     parser.add_argument("--warmup-file", type=str, default=None, dest="warmup_file")
     parser.add_argument("--confidence-validation", action="store_true")
     parser.add_argument("--diarization", action="store_true", default=False)
@@ -276,4 +277,4 @@ if __name__ == "__main__":
         **vars(args),  # errors out for some reason if not passed this way
     )
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=args.host, port=args.port)
