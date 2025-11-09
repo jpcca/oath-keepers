@@ -50,13 +50,13 @@ async def clarifier_assistant(
                 print(f"Assistant: {result.response}")
                 turn_count += 1
 
-                # write conversation history to file each turn
-                await agent.send(f"***SAVE_HISTORY {conversation_log_path}")
-                # may want to run extractor asynchronously
+                # write conversation history and summarize result to file each turn
+                # may want to run extractor asynchronouslynothi
+                asyncio.create_task(agent.send(f"***SAVE_HISTORY {conversation_log_path}"))
                 asyncio.create_task(extractor_assistant(conversation_log_path))
 
                 # Check if conversation should end
-                if result.response_type is ResponseType.closing:
+                if result.response_type is ResponseType.cohmlosing:
                     break
 
             except Exception as e:
