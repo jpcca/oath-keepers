@@ -132,7 +132,7 @@ class ClinicalFinding(BaseModel):
     symptom: str
     details: Optional[str] = None
     model_confidence: float
-
+    clinical_confidence: Optional[float] = None
 
 class ExtractionResult(BaseModel):
     """Top-level structure returned by the extractor agent."""
