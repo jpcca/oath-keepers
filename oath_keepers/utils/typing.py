@@ -130,8 +130,8 @@ class ClinicalFinding(BaseModel):
 
     location: Optional[str] = None
     symptom: str
+    details: Optional[str] = None
     model_confidence: float
-    clinical_confidence: float
 
 
 class ExtractionResult(BaseModel):
