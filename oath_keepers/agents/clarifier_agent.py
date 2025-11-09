@@ -56,7 +56,7 @@ async def clarifier_assistant(
                 asyncio.create_task(extractor_assistant(conversation_log_path))
 
                 # Check if conversation should end
-                if result.response_type is ResponseType.cohmlosing:
+                if result.response_type is ResponseType.closing:
                     break
 
             except Exception as e:
