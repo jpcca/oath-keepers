@@ -1,21 +1,22 @@
 import asyncio
+from pathlib import Path
+from datetime import datetime
+
 
 from oath_keepers.agents import clarifier_assistant, extractor_assistant
 
+log_path = Path(__file__).parent / "oath_keepers" / "log"
+
+def get_filepath() -> Path:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return Path(f"{log_path}/conversation_{timestamp}.txt")
+
 
 async def run_workflow() -> None:
-    # 1) Run clarifier. It saves a conversation log on exit.
-    log_path = await clarifier_assistant()
+    conversation_log_path = get_filepath()
+    await clarifier_assistant(conversation_log_path, extractor_assistant)
 
-    # If clarifier didn't return a specific path, report and stop.
-    if not log_path:
-        print("Conversation history was not saved properly; skipping extraction.")
-        return
-
-    # 2) Run extractor which writes JSON next to the log and returns the path.
-    out_path = await extractor_assistant(log_path)
-    if out_path:
-        print(f"Saved extracted findings to {out_path}")
+    print(f"Saved log to: {conversation_log_path}")
 
 
 if __name__ == "__main__":
