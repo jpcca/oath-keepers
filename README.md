@@ -21,6 +21,23 @@ uv run bash cpu.sh
 uv pip install -e .[cpu,dev]
 ```
 
+### Running the vLLM Server with Audio Transcription
+
+The vLLM server includes real-time audio transcription capabilities that automatically prompt the LLM with spoken input:
+
+```bash
+python oath_keepers/vllm_server.py
+```
+
+The server will:
+- Start on port 8000 with a web interface for microphone input
+- Transcribe audio in real-time using Whisper
+- Buffer transcriptions until complete sentences are detected (ending with `.`, `!`, or `?`)
+- Automatically prompt the LLM with complete sentences
+- Print LLM responses to the terminal
+
+Access the web interface at `http://localhost:8000` to start speaking into your microphone.
+
 ### Advanced caching
 
 Changes in the following files rebuilds the cache used for running unit tests in GitHub actions.

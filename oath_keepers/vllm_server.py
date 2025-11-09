@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import logging
+import re
 
 import torch
 import uvicorn
@@ -39,12 +40,75 @@ async def get():
     return HTMLResponse(get_inline_ui_html())
 
 
+async def prompt_llm_with_text(text: str):
+    """Send text to the LLM and print the response to terminal."""
+    try:
+        sampling_params = llm.get_default_sampling_params()
+        sampling_params.max_tokens = 256
+
+        response = llm.generate(
+            f"""
+                <start_of_turn>user
+                {text}<end_of_turn>
+                <start_of_turn>model
+            """,
+            sampling_params=sampling_params,
+            use_tqdm=False,
+        )[0]
+
+        if response.outputs:
+            llm_response_text = response.outputs[0].text
+            print(f"\n[LLM Response]: {llm_response_text}\n")
+            return llm_response_text
+    except Exception as e:
+        logger.error(f"Error prompting LLM: {e}")
+        return None
+
+
+def is_complete_sentence(text: str) -> bool:
+    """Check if the text ends with sentence-ending punctuation."""
+    text = text.strip()
+    if not text:
+        return False
+    return text[-1] in ".!?"
+
+
 async def handle_websocket_results(websocket, results_generator):
     """Consumes results from the audio processor and sends them via WebSocket."""
+
+    full_transcript = ""
+    sent_transcript = ""
+
     try:
         async for response in results_generator:
-            await websocket.send_json(response.to_dict())
-        # when the results_generator finishes it means all audio has been processed
+            # Store the dict to avoid calling to_dict() twice
+            response_dict = response.to_dict()
+            await websocket.send_json(response_dict)
+
+            # --- Extract lines ---
+            lines = response_dict.get("lines", [])
+            speaker_lines = [line.get("text", "") for line in lines if line.get("speaker") != -2]
+            full_transcript = " ".join(speaker_lines).strip()
+
+            # --- Find the latest new complete sentence(s) ---
+            new_text = full_transcript[len(sent_transcript) :].strip()
+            match = re.search(r"^(.*[.!?])", new_text)
+            new_text_complete_part = match.group(1).strip() if match else ""
+
+            # --- If there’s new complete text (beyond what was sent) ---
+            if new_text_complete_part:
+                print(f"\n[Transcription]: {new_text_complete_part}\n")
+                await prompt_llm_with_text(new_text_complete_part)
+                sent_transcript = " ".join(
+                    [sent_transcript, new_text_complete_part]
+                )  # remember the transcript that is already sent
+
+        # --- Handle any remaining text (if not yet complete) ---
+        remaining = full_transcript[len(sent_transcript) :].strip()
+        if remaining:
+            print(f"\n[Final partial transcription]: {remaining}\n")
+            await prompt_llm_with_text(remaining)
+
         logger.info("Results generator finished. Sending 'ready_to_stop' to client.")
         await websocket.send_json({"type": "ready_to_stop"})
     except WebSocketDisconnect:
