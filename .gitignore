@@ -16,3 +16,6 @@ wheels/
 
 # weight files
 *.pt
+
+# fastagent error log
+fastagent.jsonl
