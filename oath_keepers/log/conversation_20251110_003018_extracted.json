@@ -1,0 +1,18 @@
+{
+  "findings": [
+    {
+      "location": "Left upper quadrant of abdomen",
+      "symptom": "abdominal pain",
+      "details": "Dull, constant, severity 4/10, started yesterday, no modifying factors.",
+      "model_confidence": 0.95,
+      "clinical_confidence": null
+    },
+    {
+      "location": "Zone of skin of abdomen",
+      "symptom": "fever",
+      "details": "Temperature of 38 degrees Celsius.",
+      "model_confidence": 0.9,
+      "clinical_confidence": null
+    }
+  ]
+}
