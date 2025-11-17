@@ -1,0 +1,90 @@
+---USER
+Call received. Please greet the patient on the call.
+---ASSISTANT
+{
+          "response": "Hello! I'm a virtual assistant here to help you organize your symptoms before your doctor's appointment. I can't give medical advice, but I can help you prepare.",
+          "response_type": "greeting",
+          "reason": "Establish rapport and clarify role as a non-medical information organizer."
+        }
+---USER
+Hello!
+---ASSISTANT
+{
+          "response": "Great! To start, could you tell me what’s been concerning you most lately?",
+          "response_type": "questioning",
+          "reason": "Open-ended question to initiate symptom description and patient focus."
+        }
+---USER
+I have a stomach pain.
+---ASSISTANT
+{
+          "response": "Okay. Can you point to exactly where the pain is located in your stomach area?",
+          "response_type": "questioning",
+          "reason": "Start with location - a core symptom dimension - to gain specificity."
+        }
+---USER
+left upper side
+---ASSISTANT
+{
+          "response": "Thanks. Could you describe the pain? Is it sharp, dull, cramping, or something else?",
+          "response_type": "questioning",
+          "reason": "Explore the 'quality' dimension of the symptom, using descriptive language."
+        }
+---USER
+dull
+---ASSISTANT
+{
+          "response": "Okay, a dull pain. On a scale of 1 to 10, with 1 being mild and 10 being the worst pain imaginable, how would you rate its severity?",
+          "response_type": "questioning",
+          "reason": "Assess the severity of the pain using a standardized scale."
+        }
+---USER
+4
+---ASSISTANT
+{
+          "response": "Okay, a 4 out of 10. When did this stomach pain start?",
+          "response_type": "questioning",
+          "reason": "Explore the 'timing' dimension: onset of the symptom."
+        }
+---USER
+yesterday
+---ASSISTANT
+{
+          "response": "Okay, yesterday. And has the pain been constant since then, or does it come and go?",
+          "response_type": "questioning",
+          "reason": "Further investigate the duration and pattern of the symptom."
+        }
+---USER
+constant.
+---ASSISTANT
+{
+          "response": "Okay, constant since yesterday. Are there any activities or foods that seem to make the pain better or worse?",
+          "response_type": "questioning",
+          "reason": "Explore potential triggers - what makes the pain better or worse."
+        }
+---USER
+no
+---ASSISTANT
+{
+          "response": "Okay, so there's nothing specific that seems to improve or worsen it. Have you noticed any other symptoms along with the pain, like nausea, fever, or changes in your appetite?",
+          "response_type": "questioning",
+          "reason": "Investigate associated factors that might be relevant."
+        }
+---USER
+nothing else
+---ASSISTANT
+{
+          "response": "Okay. So, to summarize, you're experiencing a constant, dull stomach pain, rated as a 4 out of 10, in your left upper side. It started yesterday, and you haven't found anything that makes it better or worse, and you don't have any other symptoms.",
+          "response_type": "confirming",
+          "reason": "Summarize the information gathered to ensure accuracy and completeness."
+        }
+---USER
+oh, sorry, I have a fever too, about 38 degree.
+---ASSISTANT
+{
+          "response": "Okay, thank you for that information. So, it sounds like you're experiencing a constant, dull stomach pain, rated as a 4 out of 10, in your left upper side, and you also have a fever of 38 degrees. It started yesterday, and haven't found anything that makes the pain better or worse. Is that correct?",
+          "response_type": "confirming",
+          "reason": "Updated summary to include the new symptom (fever) and confirm changes with patient."
+        }
+---USER
+correct.

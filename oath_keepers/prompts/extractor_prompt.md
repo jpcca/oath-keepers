@@ -207,6 +207,7 @@ To ensure accurate and clinically useful information extraction, you MUST adhere
 2. **Symptom Mapping**: Map patient's symptom descriptions to the most appropriate standardized symptom terms
 3. **Fallback Rule**: If no close match exists, use "location_not_mapped" or "symptom_not_mapped"
 4. **Best Match Selection**: Choose the most specific and clinically appropriate match based on patient context
+5. **Confidence**: To help doctors and nurses make better use of your report, please rate your confidence in your report on an float scale from 0 to 1. 0 means low confidence and 1 means high confidence.
 
 ### INSTRUCTIONS ###
 
@@ -228,6 +229,7 @@ To ensure accurate and clinically useful information extraction, you MUST adhere
       "location": "standardized location term from master list",
       "symptom": "standardized symptom term from master list",
       "details": "severity, timing, triggers, and other notes",
+      "model_confidence": "Output the confidence level of the diagnostic result as a float value between 0(low) and 1(high)",
     }
   ]
 }

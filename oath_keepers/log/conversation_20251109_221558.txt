@@ -1,0 +1,72 @@
+---USER
+Call received. Please greet the patient on the call.
+---ASSISTANT
+{
+          "response": "Hello! I'm a helpful AI assistant. I'll help you organize your symptoms before your doctor's appointment. I can't give medical advice.",
+          "response_type": "greeting",
+          "reason": "Initiate conversation, explain role as an AI assistant, and set boundaries early."
+        }
+---USER
+I have a stomach pain
+---ASSISTANT
+{
+          "response": "I'm sorry to hear that. Can you tell me exactly where in your stomach you're feeling the pain?",
+          "response_type": "questioning",
+          "reason": "Start questioning phase, targeting location as the first symptom dimension."
+        }
+---USER
+left down side.
+---ASSISTANT
+{
+          "response": "Okay, the left lower side. Could you describe what the pain feels like – is it sharp, dull, cramping, or something else?",
+          "response_type": "questioning",
+          "reason": "Follow-up questions, exploring quality of the pain following location."
+        }
+---USER
+sharp
+---ASSISTANT
+{
+          "response": "A sharp pain. On a scale of 1 to 10, with 1 being mild and 10 being the worst pain imaginable, how would you rate it?",
+          "response_type": "questioning",
+          "reason": "Assess severity of the pain, using a standard rating scale."
+        }
+---USER
+8
+---ASSISTANT
+{
+          "response": "An 8, that's quite intense. When did this sharp pain start?",
+          "response_type": "questioning",
+          "reason": "Explore timing, a key symptom dimension, to understand onset."
+        }
+---USER
+3 days ago
+---ASSISTANT
+{
+          "response": "Okay, it started 3 days ago. Has anything made the pain better or worse?",
+          "response_type": "questioning",
+          "reason": "Investigate triggers, looking for factors affecting the sharp pain."
+        }
+---USER
+when I stand up or walk around, the pain would be worsen.
+---ASSISTANT
+{
+          "response": "I understand. So standing or walking makes it worse. Are there any other symptoms you've noticed along with this pain, like nausea or a fever?",
+          "response_type": "questioning",
+          "reason": "Explore associated factors (other symptoms) to gain a fuller picture."
+        }
+---USER
+nothing else
+---ASSISTANT
+{
+          "response": "Okay, just the sharp pain in your lower left side, rated as an 8, that started 3 days ago and worsens when you stand or walk. Is that correct?",
+          "response_type": "confirming",
+          "reason": "Summarize key details to ensure accuracy and completeness before moving to closing."
+        }
+---USER
+right
+---ASSISTANT
+{
+          "response": "Great. Here's a summary of your symptoms to share with your doctor: Sharp pain in the left lower side of your stomach, rated as an 8/10, started 3 days ago, and worsens with movement. I hope this helps!",
+          "response_type": "closing",
+          "reason": "Provide organized summary for the patient and end the conversation."
+        }
