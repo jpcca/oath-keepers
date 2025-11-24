@@ -59,7 +59,7 @@ class vLLM(AugmentedLLM):
         base_params = super()._initialize_default_params(kwargs)
 
         # Override with our specific settings
-        base_params.maxTokens = 1024
+        base_params.maxTokens = 4096
         base_params.max_iterations = 10
         base_params.model = "vLLM"
 
