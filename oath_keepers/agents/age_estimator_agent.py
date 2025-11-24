@@ -21,7 +21,9 @@ output_dir.mkdir(parents=True, exist_ok=True)  # Ensure output directory exists
 prompt_dir = base_path / "prompts"
 
 
-def visualize_distribution(distribution: AgeDistribution, turn: int, user_input: str = "", filename: str = None):
+def visualize_distribution(
+    distribution: AgeDistribution, turn: int, user_input: str = "", filename: str = None
+):
     """
     Generates a bar chart from the age distribution and saves it to a file.
     """
