@@ -21,7 +21,7 @@ output_dir.mkdir(parents=True, exist_ok=True)  # Ensure output directory exists
 prompt_dir = base_path / "prompts"
 
 
-def visualize_distribution(distribution: AgeDistribution, turn: int, filename: str = None):
+def visualize_distribution(distribution: AgeDistribution, turn: int, user_input: str = "", filename: str = None):
     """
     Generates a bar chart from the age distribution and saves it to a file.
     """
@@ -39,7 +39,7 @@ def visualize_distribution(distribution: AgeDistribution, turn: int, filename: s
     plt.bar(labels, probs, color="skyblue")
     plt.xlabel("Age Bins")
     plt.ylabel("Probability")
-    plt.title(f"Age Probability Distribution (Turn {turn})")
+    plt.title(f"Age Probability Distribution (Turn {turn})\nUser: {user_input}")
     plt.xticks(rotation=45)
     plt.ylim(0, 1.0)  # Fix y-axis to 0-1 for consistency
     plt.tight_layout()
@@ -114,7 +114,7 @@ async def run_age_estimation_loop():
                     # For visualization, let's print the top bins or just the raw JSON
                     print(result.model_dump_json(indent=2, exclude={"reasoning"}))
 
-                    img_file = visualize_distribution(result, turn)
+                    img_file = visualize_distribution(result, turn, user_input)
                     image_files.append(img_file)
                 else:
                     print("AI: Failed to generate valid distribution.")
