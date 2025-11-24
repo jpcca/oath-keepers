@@ -1,7 +1,7 @@
 import pytest
 from mcp_agent.core.prompt import Prompt
 
-from oath_keepers.agents.age_estimation_agent import agents
+from oath_keepers.agents.age_estimator_agent import agents
 from oath_keepers.models.age_models import AgeDistribution
 
 

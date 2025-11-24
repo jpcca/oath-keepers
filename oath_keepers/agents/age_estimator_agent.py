@@ -14,33 +14,11 @@ from oath_keepers.models.age_models import AgeDistribution
 from oath_keepers.vllm_client import LocalAgent
 
 # Initialize FastAgent
-agents = FastAgent("age-estimation-agent")
+agents = FastAgent("age-estimator-agent")
 base_path = Path(__file__).parent.parent
-OUTPUT_DIR = base_path / "outputs"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)  # Ensure output directory exists
-prompt_path = f"{base_path}/prompts"
-
-
-@agents.custom(
-    LocalAgent,
-    name="age_estimator",
-    instruction=Path(f"{prompt_path}/age_estimator_prompt.md").read_text(encoding="utf-8"),
-    use_history=True,  # Maintain history for multi-turn estimation
-)
-async def estimate_age(messages: List[str]) -> AgeDistribution:
-    """
-    Estimates age distribution based on a list of messages.
-    This function simulates a multi-turn conversation by sending messages one by one
-    or as a batch, but for the agent interaction we usually want to maintain state.
-
-    However, the requirement says "Input: multi-turn conversation".
-    If we want to process a conversation so far, we can send the whole transcript.
-    Or if we want to simulate the "after each turn" behavior, we can call this iteratively.
-
-    For this implementation, let's assume we are called with the latest message
-    and the agent maintains history internally via `use_history=True`.
-    """
-    pass  # The agent logic is handled by the decorator and the run loop below
+output_dir = base_path / "outputs" / "age_estimator"
+output_dir.mkdir(parents=True, exist_ok=True)  # Ensure output directory exists
+prompt_dir = base_path / "prompts"
 
 
 def visualize_distribution(distribution: AgeDistribution, turn: int, filename: str = None):
@@ -48,7 +26,7 @@ def visualize_distribution(distribution: AgeDistribution, turn: int, filename: s
     Generates a bar chart from the age distribution and saves it to a file.
     """
     if filename is None:
-        filename = OUTPUT_DIR / f"age_distribution_turn_{turn}.png"
+        filename = output_dir / f"age_distribution_turn_{turn}.png"
 
     bins = distribution.bins
     # Sort bins just in case
@@ -72,7 +50,7 @@ def visualize_distribution(distribution: AgeDistribution, turn: int, filename: s
 
 
 def create_gif(
-    image_files: List[str], output_file: str = str(OUTPUT_DIR / "age_estimation_progress.gif")
+    image_files: List[str], output_file: str = str(output_dir / "age_estimation_progress.gif")
 ):
     """
     Creates a GIF from a list of image files.
@@ -99,11 +77,17 @@ def create_gif(
         print(f"GIF saved to {output_file}")
 
 
+@agents.custom(
+    LocalAgent,
+    name="age_estimator",
+    instruction=Path(f"{prompt_dir}/age_estimator_prompt.md").read_text(encoding="utf-8"),
+    use_history=True,  # Maintain history for multi-turn estimation
+)
 async def run_age_estimation_loop():
     """
     Interactive loop to test the age estimation agent.
     """
-    print("Starting Age Estimation Agent. Type 'exit' to quit.")
+    print("Starting Age Estimator Agent. Type 'exit' to quit.")
 
     turn = 0
     image_files = []
@@ -144,7 +128,7 @@ async def run_age_estimation_loop():
     # Create GIF on exit
     if image_files:
         print("Creating progress GIF...")
-        create_gif(image_files, output_file=str(OUTPUT_DIR / "age_estimation_progress.gif"))
+        create_gif(image_files, output_file=str(output_dir / "age_estimation_progress.gif"))
 
 
 if __name__ == "__main__":
