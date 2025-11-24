@@ -1,5 +1,4 @@
 import asyncio
-import os
 from pathlib import Path
 from typing import List
 
@@ -20,11 +19,6 @@ base_path = Path(__file__).parent.parent
 output_dir = base_path / "outputs" / "age_estimator"
 output_dir.mkdir(parents=True, exist_ok=True)  # Ensure output directory exists
 prompt_dir = base_path / "prompts"
-
-# Determine which prompt to use based on CI_MODE environment variable
-ci_mode = os.getenv("CI_MODE", "false").lower() in ("true", "1", "yes")
-prompt_file = "age_estimator_prompt_ci.md" if ci_mode else "age_estimator_prompt.md"
-prompt_path = prompt_dir / prompt_file
 
 
 def visualize_distribution(
@@ -88,7 +82,7 @@ def create_gif(
 @agents.custom(
     LocalAgent,
     name="age_estimator",
-    instruction=prompt_path.read_text(encoding="utf-8"),
+    instruction=Path(f"{prompt_dir}/age_estimator_prompt.md").read_text(encoding="utf-8"),
     use_history=True,  # Maintain history for multi-turn estimation
 )
 async def run_age_estimation_loop():
