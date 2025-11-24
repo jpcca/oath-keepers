@@ -16,6 +16,8 @@ from oath_keepers.vllm_client import LocalAgent
 # Initialize FastAgent
 agents = FastAgent("age-estimation-agent")
 base_path = Path(__file__).parent.parent
+OUTPUT_DIR = base_path / "outputs"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)  # Ensure output directory exists
 prompt_path = f"{base_path}/prompts"
 
 
@@ -46,7 +48,7 @@ def visualize_distribution(distribution: AgeDistribution, turn: int, filename: s
     Generates a bar chart from the age distribution and saves it to a file.
     """
     if filename is None:
-        filename = f"age_distribution_turn_{turn}.png"
+        filename = OUTPUT_DIR / f"age_distribution_turn_{turn}.png"
 
     bins = distribution.bins
     # Sort bins just in case
@@ -69,7 +71,9 @@ def visualize_distribution(distribution: AgeDistribution, turn: int, filename: s
     return filename
 
 
-def create_gif(image_files: List[str], output_file: str = "age_estimation_progress.gif"):
+def create_gif(
+    image_files: List[str], output_file: str = str(OUTPUT_DIR / "age_estimation_progress.gif")
+):
     """
     Creates a GIF from a list of image files.
     """
@@ -140,7 +144,7 @@ async def run_age_estimation_loop():
     # Create GIF on exit
     if image_files:
         print("Creating progress GIF...")
-        create_gif(image_files)
+        create_gif(image_files, output_file=str(OUTPUT_DIR / "age_estimation_progress.gif"))
 
 
 if __name__ == "__main__":
