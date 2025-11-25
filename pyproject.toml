@@ -1,6 +1,8 @@
 [project]
 dependencies = [
   "fast-agent-mcp>=0.2.49",
+  "matplotlib>=3.10.7",
+  "pytest-asyncio>=1.3.0",
 ]
 description = "Add your description here"
 name = "oath-keepers"

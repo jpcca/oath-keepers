@@ -19,3 +19,7 @@ wheels/
 
 # fastagent error log
 fastagent.jsonl
+
+# outputs
+oath_keepers/outputs/
+!oath_keepers/outputs/.keep
