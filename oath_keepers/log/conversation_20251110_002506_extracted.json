@@ -1,0 +1,11 @@
+{
+  "findings": [
+    {
+      "location": "Left lower quadrant of abdomen",
+      "symptom": "abdominal pain",
+      "details": "Sharp pain, rated 8/10, started 3 days ago, comes and goes, exacerbated by walking outside",
+      "model_confidence": 0.9,
+      "clinical_confidence": null
+    }
+  ]
+}

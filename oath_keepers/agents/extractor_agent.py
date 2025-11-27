@@ -11,7 +11,7 @@ from oath_keepers.utils.extractor_parser import parse_conversation_log
 from oath_keepers.utils.typing import ExtractionResult
 from oath_keepers.vllm_client import LocalAgent
 
-agents = FastAgent("medical-symptom-extractor")
+agents = FastAgent("medical-symptom-extractor", quiet=True)
 base_path = Path(__file__).parent.parent
 prompt_path = f"{base_path}/prompts"
 
@@ -54,13 +54,10 @@ async def extractor_assistant(log_path: Union[str, Path]) -> Path:
             lp = Path(log_path)
             out_path = lp.with_name(lp.stem + "_extracted.json")
             out_path.write_text(json_text, encoding="utf-8")
-            print(f"Saved extracted findings to {out_path}")
-            return out_path
     except Exception as e:
         print(f"Error: {e}")
         print("result:", locals().get("result"))
         print("messages:", locals().get("messages"))
-        return Path("")
 
 
 async def main(argv: list[str] | None = None):

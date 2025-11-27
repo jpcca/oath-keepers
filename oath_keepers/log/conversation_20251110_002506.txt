@@ -1,0 +1,88 @@
+---USER
+Call received. Please greet the patient on the call.
+---ASSISTANT
+{
+          "response": "Hello! I'm here to help you organize your symptoms before your doctor's appointment. I'm an AI assistant, not a medical professional.",
+          "response_type": "greeting",
+          "reason": "Initial welcome, clarifies role as AI assistant, sets expectations."
+        }
+---USER
+Hello?
+---ASSISTANT
+{
+          "response": "It's good to hear from you. To start, could you tell me what's been bringing you in to see the doctor?",
+          "response_type": "questioning",
+          "reason": "Open ended question to begin symptom exploration, encourages patient to lead."
+        }
+---USER
+I have a pain in my stomach.
+---ASSISTANT
+{
+          "response": "Okay, I understand. Can you point to exactly where the pain is located in your stomach?",
+          "response_type": "questioning",
+          "reason": "Focusing on symptom location - a fundamental detail to gather."
+        }
+---USER
+left down side.
+---ASSISTANT
+{
+          "response": "Thanks. Could you describe the pain? Is it sharp, dull, cramping, or something else?",
+          "response_type": "questioning",
+          "reason": "Exploring quality of pain, using patient's own descriptions."
+        }
+---USER
+sharp.
+---ASSISTANT
+{
+          "response": "Okay, sharp pain on the left side. On a scale of 1 to 10, with 1 being mild and 10 being the worst pain imaginable, how would you rate it?",
+          "response_type": "questioning",
+          "reason": "Assessing pain severity using a standard scale for patient understanding."
+        }
+---USER
+maybe 8, strong pain.
+---ASSISTANT
+{
+          "response": "Okay, an 8 out of 10, that sounds quite intense. When did this pain start?",
+          "response_type": "questioning",
+          "reason": "Exploring timing of symptom onset."
+        }
+---USER
+3 days ago.
+---ASSISTANT
+{
+          "response": "Okay, so it started about three days ago. Has the pain been constant since then, or does it come and go?",
+          "response_type": "questioning",
+          "reason": "Exploring frequency and duration patterns related to symptom timing."
+        }
+---USER
+come and go.
+---ASSISTANT
+{
+          "response": "Alright, it comes and goes. Are there any activities or positions that make the pain better or worse?",
+          "response_type": "questioning",
+          "reason": "Investigating triggers and relieving factors to understand symptom patterns."
+        }
+---USER
+I can't walk outside because of the pain
+---ASSISTANT
+{
+          "response": "I understand the pain makes it hard to walk outside. Are there any other symptoms you’ve noticed along with the pain?",
+          "response_type": "questioning",
+          "reason": "Exploring associated factors to identify related symptoms."
+        }
+---USER
+nothing else.
+---ASSISTANT
+{
+          "response": "Okay, so just the sharp pain on your left lower side that comes and goes, and it makes it difficult to walk outside. Is this accurate?",
+          "response_type": "confirming",
+          "reason": "Summarizing key details gathered to ensure accuracy and completeness of the patient's account."
+        }
+---USER
+correct/
+---ASSISTANT
+{
+          "response": "Great. So to summarize, you’re experiencing sharp pain on your left lower side, which started 3 days ago, comes and goes, and is severe enough to prevent you from walking outside. I’ve recorded all of this to share with your doctor.",
+          "response_type": "closing",
+          "reason": "Providing a clear, concise summary of symptoms and reassuring the patient."
+        }
